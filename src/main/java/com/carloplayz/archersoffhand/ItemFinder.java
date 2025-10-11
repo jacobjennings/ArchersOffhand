@@ -271,31 +271,12 @@ public class ItemFinder {
     
     // Find random special arrow slot for shuffle mode (for bows - only special arrows)
     public static int findRandomSpecialArrowSlot(PlayerEntity player) {
-        var inv = player.getInventory();
-        boolean shouldScanHotbar = ConfigManager.CONFIG != null ? ConfigManager.CONFIG.scanHotbar : false;
-        List<Integer> specialArrowSlots = new ArrayList<>();
-        
-        // If scanning hotbar, start from slot 0, otherwise start from slot 9 (skip hotbar)
-        int startIndex = shouldScanHotbar ? 0 : 9;
-        // Always end at 36 (main inventory + hotbar if enabled)
-        int endIndex = 36; // Total inventory slots to scan (hotbar + main inventory)
-        
-        for (int i = startIndex; i < endIndex; i++) {
-            ItemStack stack = inv.getStack(i);
-            if (!stack.isEmpty() && stack.getItem() instanceof ArrowItem) {
-                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
-                if (itemId.contains("spectral") || itemId.contains("tipped")) {
-                    specialArrowSlots.add(i); // Add special arrow slot
-                }
-            }
+        List<Integer> arrowSlots = findAllArrowSlots(player);
+        if (arrowSlots.isEmpty()) {
+            return -1; // No arrows found
         }
-        
-        if (specialArrowSlots.isEmpty()) {
-            return -1; // No special arrows found
-        }
-        
         Random random = new Random();
-        int randomIndex = random.nextInt(specialArrowSlots.size());
-        return specialArrowSlots.get(randomIndex);
+        int randomIndex = random.nextInt(arrowSlots.size());
+        return arrowSlots.get(randomIndex);
     }
 }

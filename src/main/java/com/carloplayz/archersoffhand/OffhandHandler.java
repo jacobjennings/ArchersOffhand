@@ -315,63 +315,6 @@ public class OffhandHandler {
     
     // Helper method to restore from a specific slot (for shuffle mode)
     private static void restoreFromSpecificSlot(MinecraftClient client, PlayerEntity player, int slot) {
-        if (client.interactionManager == null || slot == -1) return;
-
-        // Pick up the current offhand item (should be ammo)
-        client.interactionManager.clickSlot(
-            player.currentScreenHandler.syncId,
-            45, // offhand slot
-            0,
-            net.minecraft.screen.slot.SlotActionType.PICKUP,
-            player
-        );
-        
-        // Convert the specified inventory index to container slot
-        int containerSlot = getContainerSlotFromInventoryIndex(slot);
-        
-        // Place it back in the specified slot (where original item should be)
-        client.interactionManager.clickSlot(
-            player.currentScreenHandler.syncId,
-            containerSlot,
-            0,
-            net.minecraft.screen.slot.SlotActionType.PICKUP,
-            player
-        );
-        
-        // Now the original item should be on cursor, place it back in offhand
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
-                player.currentScreenHandler.syncId,
-                45, // offhand slot
-                0,
-                net.minecraft.screen.slot.SlotActionType.PICKUP,
-                player
-            );
-        }
-        
-        // Clear any remaining cursor stack to be safe
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
-                player.currentScreenHandler.syncId,
-                -999, // Outside inventory
-                0,
-                net.minecraft.screen.slot.SlotActionType.PICKUP,
-                player
-            );
-        }
-    }
-    
-    // Helper method to convert inventory index to container slot (duplicated from InventoryManager for access)
-    private static int getContainerSlotFromInventoryIndex(int inventoryIndex) {
-        if (inventoryIndex >= 0 && inventoryIndex <= 8) {
-            // Hotbar slots: inventory index 0-8 maps to container slots 36-44
-            return 36 + inventoryIndex;
-        } else if (inventoryIndex >= 9 && inventoryIndex <= 35) {
-            // Main inventory slots: same in both systems (9-35)
-            return inventoryIndex;
-        } else {
-            // This shouldn't happen for normal inventory scanning
-            return inventoryIndex;
-        }
+        inventoryManager.restoreFromSpecificSlot(client, player, slot);
     }
 }

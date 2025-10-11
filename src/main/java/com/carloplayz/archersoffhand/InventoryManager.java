@@ -9,49 +9,16 @@ public class InventoryManager {
     private int originalItemSlot = -1;
 
     public boolean moveItemToOffhand(MinecraftClient client, PlayerEntity player, int sourceSlot) {
-        if (client.interactionManager == null) return false;
-
-        // Convert inventory slot index to container slot index
-        // Inventory slots: 0-8=hotbar, 9-35=main inventory
-        // Container slots: 36-44=hotbar, 9-35=main inventory, 45=offhand
-        int containerSlot = getContainerSlotFromInventoryIndex(sourceSlot);
-        
-        // First, pick up the item from inventory
-        client.interactionManager.clickSlot(
-            player.currentScreenHandler.syncId,
-            containerSlot,
-            0,
-            SlotActionType.PICKUP,
-            player
-        );
-        
-        // Then place it in offhand (slot 45 in player container)
-        client.interactionManager.clickSlot(
-            player.currentScreenHandler.syncId,
-            45, // offhand slot in container
-            0,
-            SlotActionType.PICKUP,
-            player
-        );
-        
-        // At this point, if there was an original offhand item, it's now on the cursor
-        // Place it back in the source slot (now empty)
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
-                player.currentScreenHandler.syncId,
-                containerSlot,
-                0,
-                SlotActionType.PICKUP,
-                player
-            );
-        }
-        
-        originalItemSlot = sourceSlot; // Store the original inventory index
-        return true;
+        return moveItemToOffhandInternal(client, player, sourceSlot, true);
     }
     
     // Move item to offhand without updating the originalItemSlot (for shuffle mode)
     public boolean moveItemToOffhandNoUpdate(MinecraftClient client, PlayerEntity player, int sourceSlot) {
+        return moveItemToOffhandInternal(client, player, sourceSlot, false);
+    }
+    
+    // Internal method to move item to offhand with option to update original slot
+    private boolean moveItemToOffhandInternal(MinecraftClient client, PlayerEntity player, int sourceSlot, boolean updateOriginalSlot) {
         if (client.interactionManager == null) return false;
 
         // Convert inventory slot index to container slot index
@@ -89,7 +56,9 @@ public class InventoryManager {
             );
         }
         
-        // Do NOT update originalItemSlot - keep the original value for restoration
+        if (updateOriginalSlot) {
+            originalItemSlot = sourceSlot; // Store the original inventory index
+        }
         return true;
     }
     
@@ -165,5 +134,55 @@ public class InventoryManager {
 
     public void setOriginalItemSlot(int slot) {
         this.originalItemSlot = slot;
+    }
+    
+    // Restore from a specific slot (for shuffle mode)
+    public boolean restoreFromSpecificSlot(MinecraftClient client, PlayerEntity player, int slot) {
+        if (client.interactionManager == null || slot == -1) return false;
+
+        // Pick up the current offhand item (should be ammo)
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            45, // offhand slot
+            0,
+            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            player
+        );
+        
+        // Convert the specified inventory index to container slot
+        int containerSlot = getContainerSlotFromInventoryIndex(slot);
+        
+        // Place it back in the specified slot (where original item should be)
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            containerSlot,
+            0,
+            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            player
+        );
+        
+        // Now the original item should be on cursor, place it back in offhand
+        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
+            client.interactionManager.clickSlot(
+                player.currentScreenHandler.syncId,
+                45, // offhand slot
+                0,
+                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                player
+            );
+        }
+        
+        // Clear any remaining cursor stack to be safe
+        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
+            client.interactionManager.clickSlot(
+                player.currentScreenHandler.syncId,
+                -999, // Outside inventory
+                0,
+                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                player
+            );
+        }
+        
+        return true;
     }
 }
