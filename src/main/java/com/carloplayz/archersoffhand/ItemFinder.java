@@ -78,6 +78,16 @@ public class ItemFinder {
         return arrowSlots.get(randomIndex);
     }
     
+    // Find next arrow slot for serial mode based on provided list and index
+    public static int findSerialArrowSlot(PlayerEntity player, List<Integer> availableSlots, int currentIndex) {
+        if (availableSlots.isEmpty()) {
+            return -1; // No arrows found
+        }
+        // Use modulo to cycle through the available slots
+        int index = currentIndex % availableSlots.size();
+        return availableSlots.get(index);
+    }
+    
     // Simplified rocket finding - just find any rocket
     public static int findAnyRocketSlot(PlayerEntity player) {
         var inv = player.getInventory();
@@ -128,6 +138,16 @@ public class ItemFinder {
         Random random = new Random();
         int randomIndex = random.nextInt(rocketSlots.size());
         return rocketSlots.get(randomIndex);
+    }
+    
+    // Find next rocket slot for serial mode based on provided list and index
+    public static int findSerialRocketSlot(PlayerEntity player, List<Integer> availableSlots, int currentIndex) {
+        if (availableSlots.isEmpty()) {
+            return -1; // No rockets found
+        }
+        // Use modulo to cycle through the available slots
+        int index = currentIndex % availableSlots.size();
+        return availableSlots.get(index);
     }
     
     public static int findNonPlainArrowSlot(PlayerEntity player) {
@@ -187,6 +207,16 @@ public class ItemFinder {
         Random random = new Random();
         int randomIndex = random.nextInt(explosiveRocketSlots.size());
         return explosiveRocketSlots.get(randomIndex);
+    }
+    
+    // Find next explosive rocket slot for serial mode based on provided list and index
+    public static int findSerialExplosiveRocketSlot(PlayerEntity player, List<Integer> availableSlots, int currentIndex) {
+        if (availableSlots.isEmpty()) {
+            return -1; // No explosive rockets found
+        }
+        // Use modulo to cycle through the available slots
+        int index = currentIndex % availableSlots.size();
+        return availableSlots.get(index);
     }
 
     public static int findRocketSlotWithExplosions(PlayerEntity player) {
@@ -278,5 +308,15 @@ public class ItemFinder {
         Random random = new Random();
         int randomIndex = random.nextInt(arrowSlots.size());
         return arrowSlots.get(randomIndex);
+    }
+    
+    // Find next special arrow slot for serial mode based on provided list and index
+    public static int findSerialSpecialArrowSlot(PlayerEntity player, List<Integer> availableSlots, int currentIndex) {
+        if (availableSlots.isEmpty()) {
+            return -1; // No arrows found
+        }
+        // Use modulo to cycle through the available slots
+        int index = currentIndex % availableSlots.size();
+        return availableSlots.get(index);
     }
 }
