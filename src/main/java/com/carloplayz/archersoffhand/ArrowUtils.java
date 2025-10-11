@@ -1,9 +1,8 @@
 package com.carloplayz.archersoffhand;
 
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
+import net.minecraft.item.ArrowItem;
 import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,7 @@ public class ArrowUtils {
             String itemId = Registries.ITEM.getId(item).toString();
             
             // Check if it's an arrow type
-            if (item instanceof net.minecraft.item.ArrowItem || itemId.contains("arrow")) {
+            if (item instanceof ArrowItem || itemId.contains("arrow")) {
                 String displayName = item.getName().getString();
                 String category = determineCategory(itemId);
                 

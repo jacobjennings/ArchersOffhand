@@ -145,7 +145,7 @@ public class InventoryManager {
             player.currentScreenHandler.syncId,
             45, // offhand slot
             0,
-            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            SlotActionType.PICKUP,
             player
         );
         
@@ -157,7 +157,7 @@ public class InventoryManager {
             player.currentScreenHandler.syncId,
             containerSlot,
             0,
-            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            SlotActionType.PICKUP,
             player
         );
         
@@ -167,7 +167,7 @@ public class InventoryManager {
                 player.currentScreenHandler.syncId,
                 45, // offhand slot
                 0,
-                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                SlotActionType.PICKUP,
                 player
             );
         }
@@ -178,7 +178,7 @@ public class InventoryManager {
                 player.currentScreenHandler.syncId,
                 -999, // Outside inventory
                 0,
-                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                SlotActionType.PICKUP,
                 player
             );
         }

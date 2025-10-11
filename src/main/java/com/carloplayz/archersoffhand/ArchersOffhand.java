@@ -1,5 +1,6 @@
 package com.carloplayz.archersoffhand;
 
+import com.carloplayz.archersoffhand.config.ConfigManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ public class ArchersOffhand implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("[Archer's Offhand] Initializing...");
         // load config (ensure defaults exist)
-        com.carloplayz.archersoffhand.config.ConfigManager.init();
+        ConfigManager.init();
         // initialize keybinds
         KeyBindingManager.initialize();
         // register keybind handler

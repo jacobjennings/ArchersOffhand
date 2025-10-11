@@ -21,12 +21,8 @@ public class OffhandHandler {
     private static boolean offhandSetForShuffle = false; // Track if we've set the initial offhand in shuffle mode
     private static int shuffleOriginalOffhandSlot = -1; // Track the original offhand slot for restoration in shuffle mode
     
-    // Variables for tracking offhand stack size in serial mode
-    private static int previousOffhandCountSerial = 0;
-    private static boolean offhandSetForSerial = false; // Track if we've set the initial offhand in serial mode
-    private static int serialOriginalOffhandSlot = -1; // Track the original offhand slot for restoration in serial mode
-    private static int currentSerialIndex = 0; // Track the current index in the list of available ammo for serial mode
-    private static List<Integer> serialAmmoList = new ArrayList<>(); // Track the list of available ammo slots for serial mode
+    // Serial handler instance
+    private static final SerialHandler serialHandler = new SerialHandler();
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -39,7 +35,22 @@ public class OffhandHandler {
     }
     
     // Helper method to send debug messages to in-game chat (client-side only)
-    private static void sendDebugMessage(MinecraftClient client, String message) {
+    // Static method to allow SerialHandler to access the original item slot
+    protected static int getOriginalItemSlotStatic() {
+        return inventoryManager.getOriginalItemSlot();
+    }
+
+    // Static method to allow SerialHandler to access the original item slot
+    protected static void moveArrowsToOffhandNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveArrowsToOffhandInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
+    }
+
+    // Static method to allow SerialHandler to access the original item slot
+    protected static void moveAmmoToOffhandForCrossbowNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveAmmoToOffhandForCrossbowInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
+    }
+
+    protected static void sendDebugMessage(MinecraftClient client, String message) {
         if (client.player == null) return;
         
         var formattedMessage = net.minecraft.text.Text.literal("[Archer's Offhand] " + message)
@@ -84,10 +95,7 @@ public class OffhandHandler {
             hasBowOrCrossbow = false; // Reset the tracking since items are restored
             offhandSetForShuffle = false; // Reset shuffle tracking
             shuffleOriginalOffhandSlot = -1; // Reset shuffle original offhand slot tracking
-            offhandSetForSerial = false; // Reset serial tracking
-            serialOriginalOffhandSlot = -1; // Reset serial original offhand slot tracking
-            currentSerialIndex = 0; // Reset serial index
-            serialAmmoList.clear(); // Clear serial ammo list
+            serialHandler.resetSerialTracking(); // Reset serial tracking
             healthRestoredRecently = true; // Set flag to prevent immediate reactivation
             return; // Return early to avoid re-activating after restoration
         }
@@ -100,10 +108,7 @@ public class OffhandHandler {
                     hasBowOrCrossbow = true;
                     offhandSetForShuffle = false; // Reset shuffle tracking when first starting
                     shuffleOriginalOffhandSlot = -1; // Reset shuffle original slot tracking
-                    offhandSetForSerial = false; // Reset serial tracking when first starting
-                    serialOriginalOffhandSlot = -1; // Reset serial original slot tracking
-                    currentSerialIndex = 0; // Reset serial index
-                    serialAmmoList.clear(); // Clear serial ammo list
+                    serialHandler.resetSerialTracking(); // Reset serial tracking when first starting
                     
                     if (cfg.debugLogging) {
                         sendDebugMessage(client, "[" + (isHoldingCrossbow ? "Crossbow" : "Bow") + "] Started tracking, moving ammo to offhand");
@@ -122,25 +127,7 @@ public class OffhandHandler {
                         }
                         // If in serial mode, note the initial stack count and the original offhand slot
                         else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL) {
-                            // Capture the original slot where the offhand item was placed
-                            serialOriginalOffhandSlot = inventoryManager.getOriginalItemSlot();
-                            ItemStack currentOffhand = player.getOffHandStack();
-                            if (!currentOffhand.isEmpty()) {
-                                previousOffhandCountSerial = currentOffhand.getCount();
-                                offhandSetForSerial = true;
-                                // Update the serial ammo list for crossbow
-                                if (isHoldingCrossbow) {
-                                    serialAmmoList = ConfigHandler.findAllAmmoSlotsForCrossbow(player, cfg.crossbowAmmoType);
-                                } else {
-                                    serialAmmoList = ItemFinder.findAllArrowSlots(player);
-                                }
-                                // If we have items and the current index is out of bounds, reset it
-                                if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
-                                    currentSerialIndex = 0;
-                                } else if (serialAmmoList.isEmpty()) {
-                                    currentSerialIndex = 0; // Reset if no items available
-                                }
-                            }
+                            serialHandler.initializeSerialTracking(client, player, cfg, true, true);
                         }
                     } else {
                         moveArrowsToOffhand(client, player, cfg);
@@ -156,21 +143,7 @@ public class OffhandHandler {
                         }
                         // If in serial mode, note the initial stack count and the original offhand slot
                         else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL) {
-                            // Capture the original slot where the offhand item was placed
-                            serialOriginalOffhandSlot = inventoryManager.getOriginalItemSlot();
-                            ItemStack currentOffhand = player.getOffHandStack();
-                            if (!currentOffhand.isEmpty()) {
-                                previousOffhandCountSerial = currentOffhand.getCount();
-                                offhandSetForSerial = true;
-                                // Update the serial ammo list for bow
-                                serialAmmoList = ItemFinder.findAllArrowSlots(player);
-                                // If we have items and the current index is out of bounds, reset it
-                                if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
-                                    currentSerialIndex = 0;
-                                } else if (serialAmmoList.isEmpty()) {
-                                    currentSerialIndex = 0; // Reset if no items available
-                                }
-                            }
+                            serialHandler.initializeSerialTracking(client, player, cfg, false, true);
                         }
                     }
                 } else {
@@ -202,38 +175,8 @@ public class OffhandHandler {
                         }
                     }
                     // Check if we're in serial mode and should re-serial due to ammo consumption
-                    else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL && offhandSetForSerial) {
-                        ItemStack currentOffhand = player.getOffHandStack();
-                        if (!currentOffhand.isEmpty()) {
-                            int currentCount = currentOffhand.getCount();
-                            // If the stack count has decreased, move to next serial item
-                            if (currentCount < previousOffhandCountSerial) {
-                                if (cfg.debugLogging) {
-                                    sendDebugMessage(client, "[Serial] Ammo count decreased (" + previousOffhandCountSerial + " -> " + currentCount + "), moving to next serial ammo (index: " + (currentSerialIndex + 1) + ")");
-                                }
-                                // Update the serial ammo list to account for any changes in inventory
-                                if (isHoldingCrossbow) {
-                                    serialAmmoList = ConfigHandler.findAllAmmoSlotsForCrossbow(player, cfg.crossbowAmmoType);
-                                } else {
-                                    serialAmmoList = ItemFinder.findAllArrowSlots(player);
-                                }
-                                // Perform serial selection without updating the original item slot
-                                // This will automatically increment the index when an item is found
-                                if (isHoldingCrossbow) {
-                                    moveAmmoToOffhandForCrossbowNoUpdate(client, player, cfg);
-                                } else {
-                                    moveArrowsToOffhandNoUpdate(client, player, cfg);
-                                }
-                                // Update the count to the new stack count
-                                previousOffhandCountSerial = player.getOffHandStack().getCount();
-                            } else if (currentCount > previousOffhandCountSerial) {
-                                // If the count increased, it might be due to player restocking, so update our tracking
-                                previousOffhandCountSerial = currentCount;
-                            }
-                        } else {
-                            // If the offhand is now empty, reset the serial tracking
-                            offhandSetForSerial = false;
-                        }
+                    else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL && serialHandler.isTrackingSerial()) {
+                        serialHandler.handleAmmoConsumption(client, player, cfg, isHoldingCrossbow);
                     }
                 }
             } else {
@@ -245,10 +188,7 @@ public class OffhandHandler {
                     hasBowOrCrossbow = false;
                     offhandSetForShuffle = false; // Reset shuffle tracking
                     shuffleOriginalOffhandSlot = -1; // Reset shuffle original offhand slot tracking
-                    offhandSetForSerial = false; // Reset serial tracking
-                    serialOriginalOffhandSlot = -1; // Reset serial original offhand slot tracking
-                    currentSerialIndex = 0; // Reset serial index
-                    serialAmmoList.clear(); // Clear serial ammo list
+                    serialHandler.resetSerialTracking(); // Reset serial tracking
                     restoreOriginalItems(client, player, cfg);
                 }
             }
@@ -262,9 +202,7 @@ public class OffhandHandler {
         moveArrowsToOffhandInternal(client, player, cfg, true); // Call with updateOriginalSlot = true
     }
     
-    private static void moveArrowsToOffhandNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
-        moveArrowsToOffhandInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
-    }
+
     
     private static void moveArrowsToOffhandInternal(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg, boolean updateOriginalSlot) {
         ItemStack currentOffhand = player.getOffHandStack();
@@ -287,24 +225,29 @@ public class OffhandHandler {
                 break;
             case SERIAL:
                 // For serial mode, select next arrow in sequence from the tracked list
-                arrowSlot = ItemFinder.findSerialSpecialArrowSlot(player, serialAmmoList, currentSerialIndex);
+                List<Integer> currentSerialList = serialHandler.getSerialAmmoList();
+                int currentIdx = serialHandler.getCurrentSerialIndex();
+                
+                arrowSlot = ItemFinder.findSerialSpecialArrowSlot(player, currentSerialList, currentIdx);
                 
                 // If we couldn't find ammo from the stored list (maybe inventory changed), refresh the list and try again
                 if (arrowSlot == -1) {
-                    serialAmmoList = ItemFinder.findAllArrowSlots(player); // Refresh the list with current available arrows
-                    if (!serialAmmoList.isEmpty()) {
+                    List<Integer> refreshedList = ItemFinder.findAllArrowSlots(player); // Refresh the list with current available arrows
+                    serialHandler.setSerialAmmoList(refreshedList); // Update serial handler with refreshed list
+                    if (!refreshedList.isEmpty()) {
                         // Try again with the refreshed list
-                        arrowSlot = ItemFinder.findSerialSpecialArrowSlot(player, serialAmmoList, currentSerialIndex);
+                        arrowSlot = ItemFinder.findSerialSpecialArrowSlot(player, refreshedList, currentIdx);
                     }
                 }
                 
                 if (arrowSlot != -1) {
                     // Always increment the serial index when we find and move an item, regardless of updateOriginalSlot
-                    currentSerialIndex++;
+                    int newIndex = currentIdx + 1;
                     // If we've gone past the end of the list, loop back to the beginning
-                    if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
-                        currentSerialIndex = 0;
+                    if (!currentSerialList.isEmpty() && newIndex >= currentSerialList.size()) {
+                        newIndex = 0;
                     }
+                    serialHandler.setCurrentSerialIndex(newIndex);
                 }
                 break;
             case REGULAR:
@@ -340,9 +283,7 @@ public class OffhandHandler {
         moveAmmoToOffhandForCrossbowInternal(client, player, cfg, true); // Call with updateOriginalSlot = true
     }
 
-    private static void moveAmmoToOffhandForCrossbowNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
-        moveAmmoToOffhandForCrossbowInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
-    }
+
     
     private static void moveAmmoToOffhandForCrossbowInternal(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg, boolean updateOriginalSlot) {
         ItemStack currentOffhand = player.getOffHandStack();
@@ -364,24 +305,29 @@ public class OffhandHandler {
                 break;
             case SERIAL:
                 // For serial mode, select next ammo in sequence from the tracked list
-                ammoSlot = ConfigHandler.findSerialAmmoSlotForCrossbow(player, cfg.crossbowAmmoType, serialAmmoList, currentSerialIndex);
+                List<Integer> currentSerialList = serialHandler.getSerialAmmoList();
+                int currentIdx = serialHandler.getCurrentSerialIndex();
+                
+                ammoSlot = ConfigHandler.findSerialAmmoSlotForCrossbow(player, cfg.crossbowAmmoType, currentSerialList, currentIdx);
                 
                 // If we couldn't find ammo from the stored list (maybe inventory changed), refresh the list and try again
                 if (ammoSlot == -1) {
-                    serialAmmoList = ConfigHandler.findAllAmmoSlotsForCrossbow(player, cfg.crossbowAmmoType); // Refresh the list with current available ammo
-                    if (!serialAmmoList.isEmpty()) {
+                    List<Integer> refreshedList = ConfigHandler.findAllAmmoSlotsForCrossbow(player, cfg.crossbowAmmoType); // Refresh the list with current available ammo
+                    serialHandler.setSerialAmmoList(refreshedList); // Update serial handler with refreshed list
+                    if (!refreshedList.isEmpty()) {
                         // Try again with the refreshed list
-                        ammoSlot = ConfigHandler.findSerialAmmoSlotForCrossbow(player, cfg.crossbowAmmoType, serialAmmoList, currentSerialIndex);
+                        ammoSlot = ConfigHandler.findSerialAmmoSlotForCrossbow(player, cfg.crossbowAmmoType, refreshedList, currentIdx);
                     }
                 }
                 
                 if (ammoSlot != -1) {
                     // Always increment the serial index when we find and move an item, regardless of updateOriginalSlot
-                    currentSerialIndex++;
+                    int newIndex = currentIdx + 1;
                     // If we've gone past the end of the list, loop back to the beginning
-                    if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
-                        currentSerialIndex = 0;
+                    if (!currentSerialList.isEmpty() && newIndex >= currentSerialList.size()) {
+                        newIndex = 0;
                     }
+                    serialHandler.setCurrentSerialIndex(newIndex);
                 }
                 break;
             case REGULAR:
@@ -426,13 +372,13 @@ public class OffhandHandler {
             if (cfg.debugLogging) {
                 sendDebugMessage(client, "[Restoration - Shuffle] Restored original offhand item from slot " + shuffleOriginalOffhandSlot);
             }
-        } else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL && serialOriginalOffhandSlot != -1) {
+        } else if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SERIAL && serialHandler.getSerialOriginalOffhandSlot() != -1) {
             // In serial mode, use the specifically tracked original offhand slot
             // We need to manually restore from the specific slot
-            restoreFromSpecificSlot(client, player, serialOriginalOffhandSlot);
+            restoreFromSpecificSlot(client, player, serialHandler.getSerialOriginalOffhandSlot());
             
             if (cfg.debugLogging) {
-                sendDebugMessage(client, "[Restoration - Serial] Restored original offhand item from slot " + serialOriginalOffhandSlot);
+                sendDebugMessage(client, "[Restoration - Serial] Restored original offhand item from slot " + serialHandler.getSerialOriginalOffhandSlot());
             }
         } else {
             // For regular mode, use the existing restoration method
