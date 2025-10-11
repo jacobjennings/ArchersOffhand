@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "archersoffhand",
+  "version": "1.0.0",
+  "name": "Archer's Offhand",
+  "description": "Ethically automates offhand management for bow and crossbow users.",
+  "authors": [
+    "Carloplayz"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Carloplayz/ArchersOffhand",
+    "sources": "https://github.com/Carloplayz/ArchersOffhand"
+  },
+  "license": "MIT",
+  "icon": "assets/archersoffhand/textures/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.carloplayz.archersoffhand.ArchersOffhand"
+    ],
+    "modmenu": [
+      "com.carloplayz.archersoffhand.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "archersoffhand.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "minecraft": ">=1.21.8",
+    "fabric-api": "*",
+    "yet_another_config_lib_v3": ">=3.7.1+1.21.6-fabric",
+    "modmenu": ">=15.0.0"
+  }
+}
