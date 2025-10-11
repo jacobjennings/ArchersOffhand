@@ -45,6 +45,27 @@ public class ConfigHandler {
         }
     }
     
+    // Find ammo slot for crossbow in shuffle mode
+    public static int findRandomAmmoSlotForCrossbow(PlayerEntity player, ArchersOffhandConfig.CrossbowAmmoType ammoType) {
+        switch (ammoType) {
+            case ROCKETS:
+                // ONLY look for explosive rockets (with firework stars), no fallback to plain rockets
+                return ItemFinder.findRandomExplosiveRocketSlot(player);
+            case ARROWS:
+                // Look for any special arrow (tipped, spectral), never plain arrows
+                return ItemFinder.findRandomSpecialArrowSlot(player);
+            case AUTO:
+            default:
+                // Try explosive rockets first, then special arrows as fallback (never plain arrows)
+                int autoRocket = ItemFinder.findRandomExplosiveRocketSlot(player);
+                if (autoRocket != -1) {
+                    return autoRocket;
+                } else {
+                    return ItemFinder.findRandomSpecialArrowSlot(player);
+                }
+        }
+    }
+    
     private static boolean isShieldOrTotem(ItemStack stack) {
         if (stack.isEmpty()) return false;
         

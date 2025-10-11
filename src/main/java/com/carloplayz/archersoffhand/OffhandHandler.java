@@ -12,6 +12,10 @@ public class OffhandHandler {
     private static boolean healthRestoredRecently = false; // Flag to prevent immediate reactivation after health-based restoration
     private static int actionDelayCounter = 0;
     private static final InventoryManager inventoryManager = new InventoryManager();
+    
+    // Variables for tracking offhand stack size in shuffle mode
+    private static int previousOffhandCount = 0;
+    private static boolean offhandSetForShuffle = false; // Track if we've set the initial offhand in shuffle mode
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -67,6 +71,7 @@ public class OffhandHandler {
             }
             restoreOriginalItems(client, player, cfg);
             hasBowOrCrossbow = false; // Reset the tracking since items are restored
+            offhandSetForShuffle = false; // Reset shuffle tracking
             healthRestoredRecently = true; // Set flag to prevent immediate reactivation
             return; // Return early to avoid re-activating after restoration
         }
@@ -77,13 +82,58 @@ public class OffhandHandler {
                 // If not already tracking bow/crossbow, start tracking and move ammo
                 if (!hasBowOrCrossbow) {
                     hasBowOrCrossbow = true;
+                    offhandSetForShuffle = false; // Reset shuffle tracking when first starting
                     if (cfg.debugLogging) {
                         sendDebugMessage(client, "[" + (isHoldingCrossbow ? "Crossbow" : "Bow") + "] Started tracking, moving ammo to offhand");
                     }
                     if (isHoldingCrossbow) {
                         moveAmmoToOffhandForCrossbow(client, player, cfg);
+                        // If in shuffle mode, note the initial stack count
+                        if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE) {
+                            ItemStack currentOffhand = player.getOffHandStack();
+                            if (!currentOffhand.isEmpty()) {
+                                previousOffhandCount = currentOffhand.getCount();
+                                offhandSetForShuffle = true;
+                            }
+                        }
                     } else {
                         moveArrowsToOffhand(client, player, cfg);
+                        // If in shuffle mode, note the initial stack count
+                        if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE) {
+                            ItemStack currentOffhand = player.getOffHandStack();
+                            if (!currentOffhand.isEmpty()) {
+                                previousOffhandCount = currentOffhand.getCount();
+                                offhandSetForShuffle = true;
+                            }
+                        }
+                    }
+                } else {
+                    // Check if we're in shuffle mode and should reshuffle due to ammo consumption
+                    if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE && offhandSetForShuffle) {
+                        ItemStack currentOffhand = player.getOffHandStack();
+                        if (!currentOffhand.isEmpty()) {
+                            int currentCount = currentOffhand.getCount();
+                            // If the stack count has decreased, reshuffle
+                            if (currentCount < previousOffhandCount) {
+                                if (cfg.debugLogging) {
+                                    sendDebugMessage(client, "[Shuffle] Ammo count decreased (" + previousOffhandCount + " -> " + currentCount + "), reshuffling ammo");
+                                }
+                                // Perform reshuffle
+                                if (isHoldingCrossbow) {
+                                    moveAmmoToOffhandForCrossbow(client, player, cfg);
+                                } else {
+                                    moveArrowsToOffhand(client, player, cfg);
+                                }
+                                // Update the count to the new stack count
+                                previousOffhandCount = player.getOffHandStack().getCount();
+                            } else if (currentCount > previousOffhandCount) {
+                                // If the count increased, it might be due to player restocking, so update our tracking
+                                previousOffhandCount = currentCount;
+                            }
+                        } else {
+                            // If the offhand is now empty, reset the shuffle tracking
+                            offhandSetForShuffle = false;
+                        }
                     }
                 }
             } else {
@@ -93,6 +143,7 @@ public class OffhandHandler {
                         sendDebugMessage(client, "[Weapon Switch] No longer holding bow/crossbow, restoring original items");
                     }
                     hasBowOrCrossbow = false;
+                    offhandSetForShuffle = false; // Reset shuffle tracking
                     restoreOriginalItems(client, player, cfg);
                 }
             }
@@ -113,8 +164,25 @@ public class OffhandHandler {
             return; // Don't move anything if shield/totem protection is active
         }
 
-        // Look for any arrow (simplified - no priority system)
-        int arrowSlot = ItemFinder.findAnyArrowSlot(player);
+        int arrowSlot = -1;
+        
+        // Use appropriate method based on ammo mode
+        switch (cfg.ammoMode) {
+            case SHUFFLE:
+                // Find random special arrow (tipped or spectral) for bow in shuffle mode
+                arrowSlot = ItemFinder.findRandomSpecialArrowSlot(player);
+                break;
+            case SERIAL:
+                // For serial mode, we could implement a rotation through available ammo types
+                // For now, using random selection like shuffle but in the future could track order
+                arrowSlot = ItemFinder.findRandomSpecialArrowSlot(player);
+                break;
+            case REGULAR:
+            default:
+                // Only use special arrows (tipped or spectral) for bows, never plain arrows
+                arrowSlot = ItemFinder.findAnyArrowSlot(player);
+                break;
+        }
         
         if (arrowSlot != -1) {
             inventoryManager.moveItemToOffhand(client, player, arrowSlot);
@@ -123,7 +191,8 @@ public class OffhandHandler {
                 // Show detailed message with the specific arrow type found
                 ItemStack arrowStack = player.getInventory().getStack(arrowSlot);
                 String arrowName = arrowStack.getItem().getName().getString();
-                sendDebugMessage(client, "[Bow] Moved " + arrowName + " to offhand, original item to slot " + arrowSlot);
+                String modeName = cfg.ammoMode.toString().toLowerCase();
+                sendDebugMessage(client, "[Bow - " + modeName + "] Moved " + arrowName + " to offhand, original item to slot " + arrowSlot);
             }
         } else {
             if (cfg.debugLogging) {
@@ -143,8 +212,27 @@ public class OffhandHandler {
             return; // Don't move anything if shield/totem protection is active
         }
 
-        // For crossbows, first try to find rockets, then fall back to arrows
-        int ammoSlot = ConfigHandler.findAmmoSlotForCrossbow(player, cfg.crossbowAmmoType);
+        int ammoSlot = -1;
+        
+        // Use appropriate method based on ammo mode
+        switch (cfg.ammoMode) {
+            case SHUFFLE:
+                ammoSlot = ConfigHandler.findRandomAmmoSlotForCrossbow(player, cfg.crossbowAmmoType);
+                break;
+            case SERIAL:
+                // For serial mode, we could implement a rotation through available ammo types
+                // For now, using random selection like shuffle but in the future could track order
+                ammoSlot = ConfigHandler.findRandomAmmoSlotForCrossbow(player, cfg.crossbowAmmoType);
+                break;
+            case REGULAR:
+            default:
+                // For crossbows: 
+                // - ROCKETS mode: ONLY use explosive rockets (with firework stars), no plain rockets
+                // - ARROWS mode: ONLY use special arrows (tipped/spectral), never plain arrows
+                // - AUTO mode: explosive rockets first, then special arrows as fallback (never plain ammo)
+                ammoSlot = ConfigHandler.findAmmoSlotForCrossbow(player, cfg.crossbowAmmoType);
+                break;
+        }
         
         if (ammoSlot != -1) {
             // Determine what type of ammo we're moving for messaging
@@ -154,7 +242,8 @@ public class OffhandHandler {
             inventoryManager.moveItemToOffhand(client, player, ammoSlot);
             
             if (cfg.debugLogging) {
-                sendDebugMessage(client, "[Crossbow] Moved " + ammoType + " to offhand, original item to slot " + ammoSlot);
+                String modeName = cfg.ammoMode.toString().toLowerCase();
+                sendDebugMessage(client, "[Crossbow - " + modeName + "] Moved " + ammoType + " to offhand, original item to slot " + ammoSlot);
             }
         } else {
             if (cfg.debugLogging) {

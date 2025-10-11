@@ -1,6 +1,8 @@
 package com.carloplayz.archersoffhand;
 
 import java.util.List;
+import java.util.Random;
+import java.util.ArrayList;
 
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.FireworkExplosionComponent;
@@ -40,6 +42,42 @@ public class ItemFinder {
         return -1;
     }
     
+    // Find all special arrow slots for shuffle mode
+    public static List<Integer> findAllArrowSlots(PlayerEntity player) {
+        var inv = player.getInventory();
+        boolean shouldScanHotbar = ConfigManager.CONFIG != null ? ConfigManager.CONFIG.scanHotbar : false;
+        List<Integer> arrowSlots = new ArrayList<>();
+        
+        // If scanning hotbar, start from slot 0, otherwise start from slot 9 (skip hotbar)
+        int startIndex = shouldScanHotbar ? 0 : 9;
+        // Always end at 36 (main inventory + hotbar if enabled)
+        int endIndex = 36; // Total inventory slots to scan (hotbar + main inventory)
+        
+        // Only look for special arrows (spectral, tipped) - never plain arrows
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty() && stack.getItem() instanceof ArrowItem) {
+                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+                if (itemId.contains("spectral") || itemId.contains("tipped")) {
+                    arrowSlots.add(i); // Add special arrow slot
+                }
+            }
+        }
+        
+        return arrowSlots; // Return all special arrow slots
+    }
+    
+    // Find a random arrow slot for shuffle mode
+    public static int findRandomArrowSlot(PlayerEntity player) {
+        List<Integer> arrowSlots = findAllArrowSlots(player);
+        if (arrowSlots.isEmpty()) {
+            return -1; // No arrows found
+        }
+        Random random = new Random();
+        int randomIndex = random.nextInt(arrowSlots.size());
+        return arrowSlots.get(randomIndex);
+    }
+    
     // Simplified rocket finding - just find any rocket
     public static int findAnyRocketSlot(PlayerEntity player) {
         var inv = player.getInventory();
@@ -58,6 +96,38 @@ public class ItemFinder {
         }
         
         return -1;
+    }
+    
+    // Find all rocket slots for shuffle mode
+    public static List<Integer> findAllRocketSlots(PlayerEntity player) {
+        var inv = player.getInventory();
+        boolean shouldScanHotbar = ConfigManager.CONFIG != null ? ConfigManager.CONFIG.scanHotbar : false;
+        List<Integer> rocketSlots = new ArrayList<>();
+        
+        // If scanning hotbar, start from slot 0, otherwise start from slot 9 (skip hotbar)
+        int startIndex = shouldScanHotbar ? 0 : 9;
+        // Always end at 36 (main inventory + hotbar if enabled)
+        int endIndex = 36; // Total inventory slots to scan (hotbar + main inventory)
+        
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty() && stack.isOf(Items.FIREWORK_ROCKET)) {
+                rocketSlots.add(i);
+            }
+        }
+        
+        return rocketSlots;
+    }
+    
+    // Find a random rocket slot for shuffle mode
+    public static int findRandomRocketSlot(PlayerEntity player) {
+        List<Integer> rocketSlots = findAllRocketSlots(player);
+        if (rocketSlots.isEmpty()) {
+            return -1; // No rockets found
+        }
+        Random random = new Random();
+        int randomIndex = random.nextInt(rocketSlots.size());
+        return rocketSlots.get(randomIndex);
     }
     
     public static int findNonPlainArrowSlot(PlayerEntity player) {
@@ -79,6 +149,44 @@ public class ItemFinder {
             }
         }
         return -1;
+    }
+
+    // Find all explosive rockets for shuffle mode
+    public static List<Integer> findAllExplosiveRocketSlots(PlayerEntity player) {
+        var inv = player.getInventory();
+        boolean shouldScanHotbar = ConfigManager.CONFIG != null ? ConfigManager.CONFIG.scanHotbar : false;
+        List<Integer> explosiveRocketSlots = new ArrayList<>();
+        
+        // If scanning hotbar, start from slot 0, otherwise start from slot 9 (skip hotbar)
+        int startIndex = shouldScanHotbar ? 0 : 9;
+        // Always end at 36 (main inventory + hotbar if enabled)
+        int endIndex = 36; // Total inventory slots to scan (hotbar + main inventory)
+        
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty() && stack.isOf(Items.FIREWORK_ROCKET)) {
+                FireworksComponent fw = stack.get(DataComponentTypes.FIREWORKS);
+                if (fw != null) {
+                    // Using obfuscated method name - this is the explosions list accessor
+                    List<net.minecraft.component.type.FireworkExplosionComponent> explosionList = fw.explosions();
+                    if (!explosionList.isEmpty()) {
+                        explosiveRocketSlots.add(i); // Found a rocket with explosion data
+                    }
+                }
+            }
+        }
+        return explosiveRocketSlots;
+    }
+    
+    // Find a random explosive rocket slot for shuffle mode
+    public static int findRandomExplosiveRocketSlot(PlayerEntity player) {
+        List<Integer> explosiveRocketSlots = findAllExplosiveRocketSlots(player);
+        if (explosiveRocketSlots.isEmpty()) {
+            return -1; // No explosive rockets found
+        }
+        Random random = new Random();
+        int randomIndex = random.nextInt(explosiveRocketSlots.size());
+        return explosiveRocketSlots.get(randomIndex);
     }
 
     public static int findRocketSlotWithExplosions(PlayerEntity player) {
@@ -159,5 +267,35 @@ public class ItemFinder {
         }
         
         return -1;
+    }
+    
+    // Find random special arrow slot for shuffle mode (for bows - only special arrows)
+    public static int findRandomSpecialArrowSlot(PlayerEntity player) {
+        var inv = player.getInventory();
+        boolean shouldScanHotbar = ConfigManager.CONFIG != null ? ConfigManager.CONFIG.scanHotbar : false;
+        List<Integer> specialArrowSlots = new ArrayList<>();
+        
+        // If scanning hotbar, start from slot 0, otherwise start from slot 9 (skip hotbar)
+        int startIndex = shouldScanHotbar ? 0 : 9;
+        // Always end at 36 (main inventory + hotbar if enabled)
+        int endIndex = 36; // Total inventory slots to scan (hotbar + main inventory)
+        
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty() && stack.getItem() instanceof ArrowItem) {
+                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+                if (itemId.contains("spectral") || itemId.contains("tipped")) {
+                    specialArrowSlots.add(i); // Add special arrow slot
+                }
+            }
+        }
+        
+        if (specialArrowSlots.isEmpty()) {
+            return -1; // No special arrows found
+        }
+        
+        Random random = new Random();
+        int randomIndex = random.nextInt(specialArrowSlots.size());
+        return specialArrowSlots.get(randomIndex);
     }
 }
