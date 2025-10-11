@@ -16,6 +16,7 @@ public class OffhandHandler {
     // Variables for tracking offhand stack size in shuffle mode
     private static int previousOffhandCount = 0;
     private static boolean offhandSetForShuffle = false; // Track if we've set the initial offhand in shuffle mode
+    private static int shuffleOriginalOffhandSlot = -1; // Track the original offhand slot for restoration in shuffle mode
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -72,6 +73,7 @@ public class OffhandHandler {
             restoreOriginalItems(client, player, cfg);
             hasBowOrCrossbow = false; // Reset the tracking since items are restored
             offhandSetForShuffle = false; // Reset shuffle tracking
+            shuffleOriginalOffhandSlot = -1; // Reset shuffle original offhand slot tracking
             healthRestoredRecently = true; // Set flag to prevent immediate reactivation
             return; // Return early to avoid re-activating after restoration
         }
@@ -83,13 +85,17 @@ public class OffhandHandler {
                 if (!hasBowOrCrossbow) {
                     hasBowOrCrossbow = true;
                     offhandSetForShuffle = false; // Reset shuffle tracking when first starting
+                    shuffleOriginalOffhandSlot = -1; // Reset shuffle original slot tracking
+                    
                     if (cfg.debugLogging) {
                         sendDebugMessage(client, "[" + (isHoldingCrossbow ? "Crossbow" : "Bow") + "] Started tracking, moving ammo to offhand");
                     }
                     if (isHoldingCrossbow) {
                         moveAmmoToOffhandForCrossbow(client, player, cfg);
-                        // If in shuffle mode, note the initial stack count
+                        // If in shuffle mode, note the initial stack count and the original offhand slot
                         if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE) {
+                            // Capture the original slot where the offhand item was placed
+                            shuffleOriginalOffhandSlot = inventoryManager.getOriginalItemSlot();
                             ItemStack currentOffhand = player.getOffHandStack();
                             if (!currentOffhand.isEmpty()) {
                                 previousOffhandCount = currentOffhand.getCount();
@@ -98,8 +104,10 @@ public class OffhandHandler {
                         }
                     } else {
                         moveArrowsToOffhand(client, player, cfg);
-                        // If in shuffle mode, note the initial stack count
+                        // If in shuffle mode, note the initial stack count and the original offhand slot
                         if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE) {
+                            // Capture the original slot where the offhand item was placed
+                            shuffleOriginalOffhandSlot = inventoryManager.getOriginalItemSlot();
                             ItemStack currentOffhand = player.getOffHandStack();
                             if (!currentOffhand.isEmpty()) {
                                 previousOffhandCount = currentOffhand.getCount();
@@ -118,11 +126,11 @@ public class OffhandHandler {
                                 if (cfg.debugLogging) {
                                     sendDebugMessage(client, "[Shuffle] Ammo count decreased (" + previousOffhandCount + " -> " + currentCount + "), reshuffling ammo");
                                 }
-                                // Perform reshuffle
+                                // Perform reshuffle without updating the original item slot
                                 if (isHoldingCrossbow) {
-                                    moveAmmoToOffhandForCrossbow(client, player, cfg);
+                                    moveAmmoToOffhandForCrossbowNoUpdate(client, player, cfg);
                                 } else {
-                                    moveArrowsToOffhand(client, player, cfg);
+                                    moveArrowsToOffhandNoUpdate(client, player, cfg);
                                 }
                                 // Update the count to the new stack count
                                 previousOffhandCount = player.getOffHandStack().getCount();
@@ -144,6 +152,7 @@ public class OffhandHandler {
                     }
                     hasBowOrCrossbow = false;
                     offhandSetForShuffle = false; // Reset shuffle tracking
+                    shuffleOriginalOffhandSlot = -1; // Reset shuffle original offhand slot tracking
                     restoreOriginalItems(client, player, cfg);
                 }
             }
@@ -154,6 +163,14 @@ public class OffhandHandler {
     }
 
     private static void moveArrowsToOffhand(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveArrowsToOffhandInternal(client, player, cfg, true); // Call with updateOriginalSlot = true
+    }
+    
+    private static void moveArrowsToOffhandNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveArrowsToOffhandInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
+    }
+    
+    private static void moveArrowsToOffhandInternal(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg, boolean updateOriginalSlot) {
         ItemStack currentOffhand = player.getOffHandStack();
         
         // Check shield/totem protection
@@ -185,14 +202,19 @@ public class OffhandHandler {
         }
         
         if (arrowSlot != -1) {
-            inventoryManager.moveItemToOffhand(client, player, arrowSlot);
+            if (updateOriginalSlot) {
+                inventoryManager.moveItemToOffhand(client, player, arrowSlot);
+            } else {
+                inventoryManager.moveItemToOffhandNoUpdate(client, player, arrowSlot);
+            }
             
             if (cfg.debugLogging) {
                 // Show detailed message with the specific arrow type found
                 ItemStack arrowStack = player.getInventory().getStack(arrowSlot);
                 String arrowName = arrowStack.getItem().getName().getString();
                 String modeName = cfg.ammoMode.toString().toLowerCase();
-                sendDebugMessage(client, "[Bow - " + modeName + "] Moved " + arrowName + " to offhand, original item to slot " + arrowSlot);
+                String updateType = updateOriginalSlot ? "" : " (no slot update)";
+                sendDebugMessage(client, "[Bow - " + modeName + updateType + "] Moved " + arrowName + " to offhand, original item to slot " + arrowSlot);
             }
         } else {
             if (cfg.debugLogging) {
@@ -202,6 +224,14 @@ public class OffhandHandler {
     }
 
     private static void moveAmmoToOffhandForCrossbow(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveAmmoToOffhandForCrossbowInternal(client, player, cfg, true); // Call with updateOriginalSlot = true
+    }
+
+    private static void moveAmmoToOffhandForCrossbowNoUpdate(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
+        moveAmmoToOffhandForCrossbowInternal(client, player, cfg, false); // Call with updateOriginalSlot = false
+    }
+    
+    private static void moveAmmoToOffhandForCrossbowInternal(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg, boolean updateOriginalSlot) {
         ItemStack currentOffhand = player.getOffHandStack();
         
         // Check shield/totem protection
@@ -239,11 +269,16 @@ public class OffhandHandler {
             String itemTranslationKey = player.getInventory().getStack(ammoSlot).getItem().getTranslationKey();
             String ammoType = itemTranslationKey.contains("firework_rocket") ? "rockets" : "arrows";
             
-            inventoryManager.moveItemToOffhand(client, player, ammoSlot);
+            if (updateOriginalSlot) {
+                inventoryManager.moveItemToOffhand(client, player, ammoSlot);
+            } else {
+                inventoryManager.moveItemToOffhandNoUpdate(client, player, ammoSlot);
+            }
             
             if (cfg.debugLogging) {
                 String modeName = cfg.ammoMode.toString().toLowerCase();
-                sendDebugMessage(client, "[Crossbow - " + modeName + "] Moved " + ammoType + " to offhand, original item to slot " + ammoSlot);
+                String updateType = updateOriginalSlot ? "" : " (no slot update)";
+                sendDebugMessage(client, "[Crossbow - " + modeName + updateType + "] Moved " + ammoType + " to offhand, original item to slot " + ammoSlot);
             }
         } else {
             if (cfg.debugLogging) {
@@ -253,17 +288,90 @@ public class OffhandHandler {
     }
 
     private static void restoreOriginalItems(MinecraftClient client, PlayerEntity player, ArchersOffhandConfig cfg) {
-        // Capture the original slot before restoration happens
-        int originalSlot = inventoryManager.getOriginalItemSlot();
-        
-        inventoryManager.restoreOriginalItem(client, player);
-        
-        if (cfg.debugLogging) {
-            if (originalSlot != -1) {
-                sendDebugMessage(client, "[Restoration] Restored original offhand item and ammo back to inventory slot " + originalSlot);
-            } else {
-                sendDebugMessage(client, "[Restoration] Restored original offhand item (no previous item to restore)");
+        if (cfg.ammoMode == ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE && shuffleOriginalOffhandSlot != -1) {
+            // In shuffle mode, use the specifically tracked original offhand slot
+            // We need to manually restore from the specific slot
+            restoreFromSpecificSlot(client, player, shuffleOriginalOffhandSlot);
+            
+            if (cfg.debugLogging) {
+                sendDebugMessage(client, "[Restoration - Shuffle] Restored original offhand item from slot " + shuffleOriginalOffhandSlot);
             }
+        } else {
+            // For regular mode, use the existing restoration method
+            // Capture the original slot before restoration happens
+            int originalSlot = inventoryManager.getOriginalItemSlot();
+            
+            inventoryManager.restoreOriginalItem(client, player);
+            
+            if (cfg.debugLogging) {
+                if (originalSlot != -1) {
+                    sendDebugMessage(client, "[Restoration] Restored original offhand item and ammo back to inventory slot " + originalSlot);
+                } else {
+                    sendDebugMessage(client, "[Restoration] Restored original offhand item (no previous item to restore)");
+                }
+            }
+        }
+    }
+    
+    // Helper method to restore from a specific slot (for shuffle mode)
+    private static void restoreFromSpecificSlot(MinecraftClient client, PlayerEntity player, int slot) {
+        if (client.interactionManager == null || slot == -1) return;
+
+        // Pick up the current offhand item (should be ammo)
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            45, // offhand slot
+            0,
+            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            player
+        );
+        
+        // Convert the specified inventory index to container slot
+        int containerSlot = getContainerSlotFromInventoryIndex(slot);
+        
+        // Place it back in the specified slot (where original item should be)
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            containerSlot,
+            0,
+            net.minecraft.screen.slot.SlotActionType.PICKUP,
+            player
+        );
+        
+        // Now the original item should be on cursor, place it back in offhand
+        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
+            client.interactionManager.clickSlot(
+                player.currentScreenHandler.syncId,
+                45, // offhand slot
+                0,
+                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                player
+            );
+        }
+        
+        // Clear any remaining cursor stack to be safe
+        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
+            client.interactionManager.clickSlot(
+                player.currentScreenHandler.syncId,
+                -999, // Outside inventory
+                0,
+                net.minecraft.screen.slot.SlotActionType.PICKUP,
+                player
+            );
+        }
+    }
+    
+    // Helper method to convert inventory index to container slot (duplicated from InventoryManager for access)
+    private static int getContainerSlotFromInventoryIndex(int inventoryIndex) {
+        if (inventoryIndex >= 0 && inventoryIndex <= 8) {
+            // Hotbar slots: inventory index 0-8 maps to container slots 36-44
+            return 36 + inventoryIndex;
+        } else if (inventoryIndex >= 9 && inventoryIndex <= 35) {
+            // Main inventory slots: same in both systems (9-35)
+            return inventoryIndex;
+        } else {
+            // This shouldn't happen for normal inventory scanning
+            return inventoryIndex;
         }
     }
 }

@@ -50,6 +50,49 @@ public class InventoryManager {
         return true;
     }
     
+    // Move item to offhand without updating the originalItemSlot (for shuffle mode)
+    public boolean moveItemToOffhandNoUpdate(MinecraftClient client, PlayerEntity player, int sourceSlot) {
+        if (client.interactionManager == null) return false;
+
+        // Convert inventory slot index to container slot index
+        // Inventory slots: 0-8=hotbar, 9-35=main inventory
+        // Container slots: 36-44=hotbar, 9-35=main inventory, 45=offhand
+        int containerSlot = getContainerSlotFromInventoryIndex(sourceSlot);
+        
+        // First, pick up the item from inventory
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            containerSlot,
+            0,
+            SlotActionType.PICKUP,
+            player
+        );
+        
+        // Then place it in offhand (slot 45 in player container)
+        client.interactionManager.clickSlot(
+            player.currentScreenHandler.syncId,
+            45, // offhand slot in container
+            0,
+            SlotActionType.PICKUP,
+            player
+        );
+        
+        // At this point, if there was an original offhand item, it's now on the cursor
+        // Place it back in the source slot (now empty)
+        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
+            client.interactionManager.clickSlot(
+                player.currentScreenHandler.syncId,
+                containerSlot,
+                0,
+                SlotActionType.PICKUP,
+                player
+            );
+        }
+        
+        // Do NOT update originalItemSlot - keep the original value for restoration
+        return true;
+    }
+    
     // Convert inventory index to container slot number
     // In PlayerInventory: 0-8 = hotbar, 9-35 = main inventory
     // In Container: 36-44 = hotbar (corresponds to inventory 0-8), 9-35 = main inventory (same), 45 = offhand
