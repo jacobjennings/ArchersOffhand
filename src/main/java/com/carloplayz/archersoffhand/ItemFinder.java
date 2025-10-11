@@ -83,9 +83,31 @@ public class ItemFinder {
         if (availableSlots.isEmpty()) {
             return -1; // No arrows found
         }
+        
         // Use modulo to cycle through the available slots
-        int index = currentIndex % availableSlots.size();
-        return availableSlots.get(index);
+        int startingIndex = currentIndex % availableSlots.size();
+        int currentIndexToCheck = startingIndex;
+        
+        // Check the starting position first
+        int slot = availableSlots.get(currentIndexToCheck);
+        ItemStack stack = player.getInventory().getStack(slot);
+        if (!stack.isEmpty() && stack.getItem() instanceof net.minecraft.item.ArrowItem) {
+            return slot;
+        }
+        
+        // If the current slot doesn't have a valid arrow, scan forward to find the next valid one
+        int originalIndex = currentIndexToCheck;
+        do {
+            currentIndexToCheck = (currentIndexToCheck + 1) % availableSlots.size();
+            slot = availableSlots.get(currentIndexToCheck);
+            stack = player.getInventory().getStack(slot);
+            if (!stack.isEmpty() && stack.getItem() instanceof net.minecraft.item.ArrowItem) {
+                return slot;
+            }
+        } while (currentIndexToCheck != originalIndex); // Loop until we've checked all slots or found a match
+        
+        // If no valid arrow slot found in the list, return -1
+        return -1;
     }
     
     // Simplified rocket finding - just find any rocket
@@ -145,9 +167,31 @@ public class ItemFinder {
         if (availableSlots.isEmpty()) {
             return -1; // No rockets found
         }
+        
         // Use modulo to cycle through the available slots
-        int index = currentIndex % availableSlots.size();
-        return availableSlots.get(index);
+        int startingIndex = currentIndex % availableSlots.size();
+        int currentIndexToCheck = startingIndex;
+        
+        // Check the starting position first
+        int slot = availableSlots.get(currentIndexToCheck);
+        ItemStack stack = player.getInventory().getStack(slot);
+        if (!stack.isEmpty() && stack.isOf(net.minecraft.item.Items.FIREWORK_ROCKET)) {
+            return slot;
+        }
+        
+        // If the current slot doesn't have a valid rocket, scan forward to find the next valid one
+        int originalIndex = currentIndexToCheck;
+        do {
+            currentIndexToCheck = (currentIndexToCheck + 1) % availableSlots.size();
+            slot = availableSlots.get(currentIndexToCheck);
+            stack = player.getInventory().getStack(slot);
+            if (!stack.isEmpty() && stack.isOf(net.minecraft.item.Items.FIREWORK_ROCKET)) {
+                return slot;
+            }
+        } while (currentIndexToCheck != originalIndex); // Loop until we've checked all slots or found a match
+        
+        // If no valid rocket slot found in the list, return -1
+        return -1;
     }
     
     public static int findNonPlainArrowSlot(PlayerEntity player) {
@@ -214,9 +258,44 @@ public class ItemFinder {
         if (availableSlots.isEmpty()) {
             return -1; // No explosive rockets found
         }
+        
         // Use modulo to cycle through the available slots
-        int index = currentIndex % availableSlots.size();
-        return availableSlots.get(index);
+        int startingIndex = currentIndex % availableSlots.size();
+        int currentIndexToCheck = startingIndex;
+        
+        // Check the starting position first
+        int slot = availableSlots.get(currentIndexToCheck);
+        ItemStack stack = player.getInventory().getStack(slot);
+        if (!stack.isEmpty() && stack.isOf(net.minecraft.item.Items.FIREWORK_ROCKET)) {
+            var fw = stack.get(net.minecraft.component.DataComponentTypes.FIREWORKS);
+            if (fw != null) {
+                // Using obfuscated method name - this is the explosions list accessor
+                java.util.List<net.minecraft.component.type.FireworkExplosionComponent> explosionList = fw.explosions();
+                if (!explosionList.isEmpty()) {
+                    return slot;
+                }
+            }
+        }
+        
+        // If the current slot doesn't have a valid explosive rocket, scan forward to find the next valid one
+        int originalIndex = currentIndexToCheck;
+        do {
+            currentIndexToCheck = (currentIndexToCheck + 1) % availableSlots.size();
+            slot = availableSlots.get(currentIndexToCheck);
+            stack = player.getInventory().getStack(slot);
+            if (!stack.isEmpty() && stack.isOf(net.minecraft.item.Items.FIREWORK_ROCKET)) {
+                var fw = stack.get(net.minecraft.component.DataComponentTypes.FIREWORKS);
+                if (fw != null) {
+                    java.util.List<net.minecraft.component.type.FireworkExplosionComponent> explosionList = fw.explosions();
+                    if (!explosionList.isEmpty()) {
+                        return slot;
+                    }
+                }
+            }
+        } while (currentIndexToCheck != originalIndex); // Loop until we've checked all slots or found a match
+        
+        // If no valid explosive rocket slot found in the list, return -1
+        return -1;
     }
 
     public static int findRocketSlotWithExplosions(PlayerEntity player) {
@@ -315,8 +394,36 @@ public class ItemFinder {
         if (availableSlots.isEmpty()) {
             return -1; // No arrows found
         }
+        
         // Use modulo to cycle through the available slots
-        int index = currentIndex % availableSlots.size();
-        return availableSlots.get(index);
+        int startingIndex = currentIndex % availableSlots.size();
+        int currentIndexToCheck = startingIndex;
+        
+        // Check the starting position first
+        int slot = availableSlots.get(currentIndexToCheck);
+        ItemStack stack = player.getInventory().getStack(slot);
+        if (!stack.isEmpty() && stack.getItem() instanceof net.minecraft.item.ArrowItem) {
+            String itemId = net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString();
+            if (itemId.contains("spectral") || itemId.contains("tipped")) {
+                return slot;
+            }
+        }
+        
+        // If the current slot doesn't have a valid special arrow, scan forward to find the next valid one
+        int originalIndex = currentIndexToCheck;
+        do {
+            currentIndexToCheck = (currentIndexToCheck + 1) % availableSlots.size();
+            slot = availableSlots.get(currentIndexToCheck);
+            stack = player.getInventory().getStack(slot);
+            if (!stack.isEmpty() && stack.getItem() instanceof net.minecraft.item.ArrowItem) {
+                String itemId = net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).toString();
+                if (itemId.contains("spectral") || itemId.contains("tipped")) {
+                    return slot;
+                }
+            }
+        } while (currentIndexToCheck != originalIndex); // Loop until we've checked all slots or found a match
+        
+        // If no valid special arrow slot found in the list, return -1
+        return -1;
     }
 }
