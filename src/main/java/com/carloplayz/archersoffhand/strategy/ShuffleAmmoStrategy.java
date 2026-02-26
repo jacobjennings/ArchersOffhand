@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 public class ShuffleAmmoStrategy implements IAmmoStrategy {
     private int previousOffhandCount = 0;
     private boolean isTracking = false;
+    private int swapDelayCounter = 0;
 
     @Override
     public void activate(OffhandContext context) {
@@ -40,15 +41,22 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
 
         int currentCount = currentOffhand.getCount();
         if (currentCount < previousOffhandCount) {
-            // Ammo consumed, reshuffle
-            int slot = findSlot(context);
-            if (slot != -1) {
-                // False means don't overwrite the originalItemSlot
-                context.inventoryManager.moveItemToOffhandNoUpdate(context.client, context.player, slot);
-                previousOffhandCount = context.player.getOffHandStack().getCount();
+            swapDelayCounter++;
+            if (swapDelayCounter >= context.config.swapDelayTicks) {
+                // Ammo consumed and delay passed, reshuffle
+                int slot = findSlot(context);
+                if (slot != -1) {
+                    // False means don't overwrite the originalItemSlot
+                    context.inventoryManager.moveItemToOffhandNoUpdate(context.client, context.player, slot);
+                    previousOffhandCount = context.player.getOffHandStack().getCount();
+                }
+                swapDelayCounter = 0; // reset for next shot
             }
         } else if (currentCount > previousOffhandCount) {
             previousOffhandCount = currentCount;
+            swapDelayCounter = 0; // reset
+        } else {
+            swapDelayCounter = 0; // reset if they grabbed something else and we didn't trigger
         }
     }
 
@@ -56,6 +64,7 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
     public void deactivate(OffhandContext context) {
         isTracking = false;
         previousOffhandCount = 0;
+        swapDelayCounter = 0;
     }
 
     private int findSlot(OffhandContext context) {

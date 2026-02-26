@@ -10,7 +10,6 @@ import net.minecraft.entity.player.PlayerEntity;
 
 public class OffhandHandler {
     private static IOffhandState currentState = new IdleState();
-    private static int actionDelayCounter = 0;
     private static final InventoryManager inventoryManager = new InventoryManager();
 
     public static void register() {
@@ -35,13 +34,6 @@ public class OffhandHandler {
         ArchersOffhandConfig cfg = ConfigManager.CONFIG;
         if (cfg == null || !cfg.enabled)
             return;
-
-        // Handle action delay
-        actionDelayCounter++;
-        if (actionDelayCounter < cfg.actionDelayTicks) {
-            return;
-        }
-        actionDelayCounter = 0; // Reset counter
 
         OffhandContext context = new OffhandContext(client, player, cfg, inventoryManager);
         currentState = currentState.onTick(context);

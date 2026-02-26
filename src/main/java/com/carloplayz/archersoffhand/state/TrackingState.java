@@ -10,6 +10,7 @@ import com.carloplayz.archersoffhand.strategy.ShuffleAmmoStrategy;
 public class TrackingState implements IOffhandState {
     private final IAmmoStrategy ammoStrategy;
     private final boolean isHoldingCrossbow;
+    private int ticksWithoutWeapon = 0;
 
     public TrackingState(OffhandContext context) {
         this.isHoldingCrossbow = context.isHoldingCrossbow;
@@ -34,13 +35,18 @@ public class TrackingState implements IOffhandState {
     public IOffhandState onTick(OffhandContext context) {
         // Check for weapon switch (restoration)
         if (!context.hasWeapon()) {
-            if (context.config.debugLogging) {
-                sendDebugMessage(context.client,
-                        "[Weapon Switch] No longer holding bow/crossbow, restoring original items");
+            ticksWithoutWeapon++;
+            if (ticksWithoutWeapon >= context.config.unequipDelayTicks) {
+                if (context.config.debugLogging) {
+                    sendDebugMessage(context.client,
+                            "[Weapon Switch] No longer holding bow/crossbow, restoring original items");
+                }
+                context.inventoryManager.restoreOriginalItem(context.client, context.player);
+                ammoStrategy.deactivate(context);
+                return new IdleState();
             }
-            context.inventoryManager.restoreOriginalItem(context.client, context.player);
-            ammoStrategy.deactivate(context);
-            return new IdleState();
+        } else {
+            ticksWithoutWeapon = 0; // Reset if they pull it back out within the window
         }
 
         // Check for low health failsafe

@@ -11,6 +11,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
     private int previousOffhandCount = 0;
     private boolean isTracking = false;
     private int currentSerialIndex = 0;
+    private int swapDelayCounter = 0;
     private List<Integer> serialAmmoList = new ArrayList<>();
 
     @Override
@@ -55,19 +56,26 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
 
         int currentCount = currentOffhand.getCount();
         if (currentCount < previousOffhandCount) {
-            refreshList(context);
+            swapDelayCounter++;
+            if (swapDelayCounter >= context.config.swapDelayTicks) {
+                refreshList(context);
 
-            int slot = findSlot(context);
-            if (slot != -1) {
-                context.inventoryManager.moveItemToOffhandNoUpdate(context.client, context.player, slot);
-                currentSerialIndex++;
-                if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
-                    currentSerialIndex = 0;
+                int slot = findSlot(context);
+                if (slot != -1) {
+                    context.inventoryManager.moveItemToOffhandNoUpdate(context.client, context.player, slot);
+                    currentSerialIndex++;
+                    if (!serialAmmoList.isEmpty() && currentSerialIndex >= serialAmmoList.size()) {
+                        currentSerialIndex = 0;
+                    }
+                    previousOffhandCount = context.player.getOffHandStack().getCount();
                 }
-                previousOffhandCount = context.player.getOffHandStack().getCount();
+                swapDelayCounter = 0;
             }
         } else if (currentCount > previousOffhandCount) {
             previousOffhandCount = currentCount;
+            swapDelayCounter = 0;
+        } else {
+            swapDelayCounter = 0;
         }
     }
 
@@ -76,6 +84,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
         isTracking = false;
         previousOffhandCount = 0;
         currentSerialIndex = 0;
+        swapDelayCounter = 0;
         serialAmmoList.clear();
     }
 

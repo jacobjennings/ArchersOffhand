@@ -3,10 +3,17 @@ package com.carloplayz.archersoffhand.state;
 import com.carloplayz.archersoffhand.OffhandContext;
 
 public class IdleState implements IOffhandState {
+    private int ticksHoldingWeapon = 0;
+
     @Override
     public IOffhandState onTick(OffhandContext context) {
         if (context.hasWeapon()) {
-            return new TrackingState(context);
+            ticksHoldingWeapon++;
+            if (ticksHoldingWeapon >= context.config.equipDelayTicks) {
+                return new TrackingState(context);
+            }
+        } else {
+            ticksHoldingWeapon = 0; // Reset if weapon is unequipped before delay finishes
         }
         return this;
     }
