@@ -1,61 +1,61 @@
 # Archer's Offhand
 
-Ethically automates offhand management for bow and crossbow users in Minecraft. This Fabric mod intelligently manages your offhand inventory to ensure you always have the right ammunition when using ranged weapons.
+<p align="center">
+  <a href="https://modrinth.com/mod/archers-offhand">
+    <img src="https://img.shields.io/badge/Available%20on-Modrinth-1bd96a?style=for-the-badge&logo=modrinth&scale=1.5" alt="Available on Modrinth">
+  </a>
+</p>
 
-## Features
+A powerful, highly configurable, and ethically-minded Minecraft Fabric mod that automates offhand inventory management for bow and crossbow users. Never scramble for arrows in the middle of a fight again.
 
-- **Automatic Arrow Management**: Automatically equips the correct arrows for your bow or crossbow
-- **Smart Offhand Switching**: Dynamically switches offhand items based on your current weapon
-- **Configurable Settings**: Customize the mod behavior through an in-game configuration menu
-- **Mod Menu Integration**: Easy access to configuration through the Mod Menu mod
-- **Crossbow Support**: Full support for crossbow ammunition management
+## ✨ Features
 
-## Requirements
+- **Smart Ammo Management**: Automatically fetches and equips arrows and fireworks to your offhand the moment you hold a bow or crossbow.
+- **Dynamic Restoration**: Instantly restores your previous offhand item (like a Shield or Totem of Undying) as soon as you put your bow away.
+- **Multiple Ammo Selection Modes**:
+  - `REGULAR`: Grabs the first available stack of arrows or rockets.
+  - `SHUFFLE`: Picks a random stack of special arrows or rockets to keep your enemies guessing.
+  - `SERIAL`: Cycles methodically through your ammo types, one by one.
+- **Advanced Delay Presets**: Choose between 5 preset delay profiles designed to balance performance, feel, and anti-cheat compliance:
+  - `PERFORMANCE`: Higher ticks to minimize server/client impact.
+  - `SPEED`: Zero delay for maximum responsiveness.
+  - `BALANCED`: The default, fine-tuned vanilla experience.
+  - `ADAPTIVE`: Dynamically randomizes timings acting as a decoy for strict anti-cheat plugins.
+  - `CUSTOM`: Complete control over individual delay values via sliders.
+- **Failsafe & Protection System**: Prevents replacing vital offhand items (Totems/Shields) without permission, and can automatically revert to a Totem if your health drops below a heavily configurable threshold.
 
-- Minecraft 1.21.8
-- Fabric Loader 0.17.2 or higher
-- Fabric API 0.134.0 or higher
-- Yet Another Config Lib 3.7.1 or higher
-- Java 21
+## ⚙️ How It Works (Under the Hood)
 
-## Installation
+Archer's Offhand is powered by a robust **State Machine** architecture ensuring reliable, lag-free performance:
 
-1. Install [Fabric Loader](https://fabricmc.net/use/installer/)
-2. Install [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
-3. Install [Yet Another Config Lib](https://modrinth.com/mod/yet-another-config-lib)
-4. Download the Archer's Offhand mod file
-5. Place the mod file in your `mods` folder located in your Minecraft directory
-6. Launch Minecraft with the Fabric profile
+- **Idle State**: Monitors your hands waiting for a ranged weapon.
+- **Tracking State**: Actively manages your ammo supply while a weapon is equipped, adhering to your chosen `AmmoStrategy` (Regular, Shuffle, Serial) and scanning delays.
+- **Cooldowns & Queues**: An advanced `InventoryManager` handles the actual item swapping. It utilizes a sophisticated click-queue system to deliberately space out inventory simulated clicks, defeating rapid-fire anti-cheat kicks while maintaining a smooth user experience.
 
-## Configuration
+## 📥 Installation
 
-The mod can be configured through the in-game configuration menu when Mod Menu is installed:
-1. Launch Minecraft and go to the Mods screen
-2. Find Archer's Offhand in the mod list
-3. Click on the `Config` button to adjust settings
+1. Install [Fabric Loader](https://fabricmc.net/use/installer/) (0.18.4+)
+2. Install [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api) (0.141.2+ for 1.21.11)
+3. Install [Yet Another Config Lib (YACL)](https://modrinth.com/mod/yet-another-config-lib)
+4. _(Optional but recommended)_ Install [ModMenu](https://modrinth.com/mod/modmenu) for an easy in-game configuration screen.
+5. Drop the Archer's Offhand `.jar` into your Minecraft `mods` folder.
 
-## How It Works
+## 🔧 Configuration
 
-When you equip a bow or crossbow, the mod will automatically:
-- Check your inventory for available arrows
-- Equip the first compatible arrow type to your offhand
-- Switch offhand items as needed when you switch between different ranged weapons
+Archer's Offhand features a rich, structured configuration screen powered by YACL. Access it via ModMenu to tweak:
 
-## License
+- Master toggles and behavior types.
+- Specific Arrow/Rocket prioritization.
+- Failsafes and Low-Health threshold sliders.
+- Action Delays (Equipping, Unequipping, Swapping, Scanning, and Movement).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🐛 Support & Contributions
 
-## Support
+Encounter an issue or have a suggestion?
 
-If you encounter any issues or have suggestions for improvements:
-- Report bugs on the [GitHub Issues](https://github.com/Carloplayz/ArchersOffhand/issues) page
-- For general questions, you can reach out through the Modrinth mod page
+- Report bugs or request features on the [GitHub Issues](https://github.com/Carloplayz/ArchersOffhand/issues) page.
+- Contributions are always welcome! Feel free to fork, make your changes, and submit a PR.
 
-## Contributing
+---
 
-Contributions are welcome! Feel free to fork the repository, make changes, and submit pull requests.
-
-## Acknowledgments
-
-- Thanks to the Fabric team for providing the modding framework
-- Built with the Minecraft development community in mind
+_Built with love for the Minecraft Fabric community._
