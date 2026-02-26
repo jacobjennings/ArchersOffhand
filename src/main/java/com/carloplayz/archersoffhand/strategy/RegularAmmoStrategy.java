@@ -5,6 +5,7 @@ import com.carloplayz.archersoffhand.OffhandContext;
 import net.minecraft.item.ItemStack;
 
 public class RegularAmmoStrategy implements IAmmoStrategy {
+    private int inventoryScanCounter = 0;
 
     @Override
     public void activate(OffhandContext context) {
@@ -44,12 +45,20 @@ public class RegularAmmoStrategy implements IAmmoStrategy {
 
     @Override
     public void onTick(OffhandContext context) {
-        // Regular mode doesn't do anything continuously
+        if (context.player.getOffHandStack().isEmpty()) {
+            inventoryScanCounter++;
+            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+                activate(context);
+                inventoryScanCounter = 0;
+            }
+        } else {
+            inventoryScanCounter = 0;
+        }
     }
 
     @Override
     public void deactivate(OffhandContext context) {
-        // Nothing to clean up
+        inventoryScanCounter = 0;
     }
 
     private void sendDebugMessage(net.minecraft.client.MinecraftClient client, String message) {

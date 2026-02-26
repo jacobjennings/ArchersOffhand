@@ -8,6 +8,7 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
     private int previousOffhandCount = 0;
     private boolean isTracking = false;
     private int swapDelayCounter = 0;
+    private int inventoryScanCounter = 0;
 
     @Override
     public void activate(OffhandContext context) {
@@ -30,8 +31,14 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
 
     @Override
     public void onTick(OffhandContext context) {
-        if (!isTracking)
+        if (!isTracking) {
+            inventoryScanCounter++;
+            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+                activate(context);
+                inventoryScanCounter = 0;
+            }
             return;
+        }
 
         ItemStack currentOffhand = context.player.getOffHandStack();
         if (currentOffhand.isEmpty()) {
@@ -65,6 +72,7 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
         isTracking = false;
         previousOffhandCount = 0;
         swapDelayCounter = 0;
+        inventoryScanCounter = 0;
     }
 
     private int findSlot(OffhandContext context) {

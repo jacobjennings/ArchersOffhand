@@ -9,6 +9,8 @@ public class ArchersOffhandConfig {
     public int equipDelayTicks = 4;
     public int unequipDelayTicks = 4;
     public int swapDelayTicks = 2;
+    public int inventoryScanDelayTicks = 10;
+    public int itemMovementDelayTicks = 2;
     public double lowHealthThreshold = 6.0;
     public boolean restoreOffhandOnLowHealth = true;
     public boolean allowReplaceShieldTotem = true;

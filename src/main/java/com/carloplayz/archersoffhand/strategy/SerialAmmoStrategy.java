@@ -12,6 +12,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
     private boolean isTracking = false;
     private int currentSerialIndex = 0;
     private int swapDelayCounter = 0;
+    private int inventoryScanCounter = 0;
     private List<Integer> serialAmmoList = new ArrayList<>();
 
     @Override
@@ -45,8 +46,14 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
 
     @Override
     public void onTick(OffhandContext context) {
-        if (!isTracking)
+        if (!isTracking) {
+            inventoryScanCounter++;
+            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+                activate(context);
+                inventoryScanCounter = 0;
+            }
             return;
+        }
 
         ItemStack currentOffhand = context.player.getOffHandStack();
         if (currentOffhand.isEmpty()) {
@@ -85,6 +92,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
         previousOffhandCount = 0;
         currentSerialIndex = 0;
         swapDelayCounter = 0;
+        inventoryScanCounter = 0;
         serialAmmoList.clear();
     }
 

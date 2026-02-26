@@ -35,6 +35,8 @@ public class OffhandHandler {
         if (cfg == null || !cfg.enabled)
             return;
 
+        inventoryManager.tick(client, cfg);
+
         OffhandContext context = new OffhandContext(client, player, cfg, inventoryManager);
         currentState = currentState.onTick(context);
     }

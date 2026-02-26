@@ -141,11 +141,35 @@ public class ArchersOffhandConfigScreen {
                                 .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
                                 .build();
 
+                Option<Integer> inventoryScanDelayOption = Option.<Integer>createBuilder()
+                                .name(Text.literal("Inventory Scan Delay (ticks)"))
+                                .description(OptionDescription.of(Text.literal(
+                                                "Delay between full inventory scans when out of ammo, avoiding constant lag.")))
+                                .binding(
+                                                10,
+                                                () -> cfg.inventoryScanDelayTicks,
+                                                val -> cfg.inventoryScanDelayTicks = val)
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
+                                .build();
+
+                Option<Integer> itemMovementDelayOption = Option.<Integer>createBuilder()
+                                .name(Text.literal("Item Movement Delay (ticks)"))
+                                .description(OptionDescription.of(Text.literal(
+                                                "Delay between each simulated click when equipping ammo, preventing anti-cheat 'FastClick' kicks.")))
+                                .binding(
+                                                2,
+                                                () -> cfg.itemMovementDelayTicks,
+                                                val -> cfg.itemMovementDelayTicks = val)
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 10).step(1))
+                                .build();
+
                 OptionGroup delaysGroup = OptionGroup.createBuilder()
                                 .name(Text.literal("Action Delays"))
                                 .option(equipDelayOption)
                                 .option(unequipDelayOption)
                                 .option(swapDelayOption)
+                                .option(inventoryScanDelayOption)
+                                .option(itemMovementDelayOption)
                                 .build();
 
                 // --- ADVANCED OPTIONS ---

@@ -3,9 +3,48 @@ package com.carloplayz.archersoffhand;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.slot.SlotActionType;
+import com.carloplayz.archersoffhand.config.ArchersOffhandConfig;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class InventoryManager {
     private int originalItemSlot = -1;
+    private final Queue<ClickAction> clickQueue = new LinkedList<>();
+    private int clickDelayCounter = 0;
+
+    private static class ClickAction {
+        public final int syncId;
+        public final int slot;
+        public final int button;
+        public final SlotActionType actionType;
+        public final PlayerEntity player;
+
+        public ClickAction(int syncId, int slot, int button, SlotActionType actionType, PlayerEntity player) {
+            this.syncId = syncId;
+            this.slot = slot;
+            this.button = button;
+            this.actionType = actionType;
+            this.player = player;
+        }
+    }
+
+    public void tick(MinecraftClient client, ArchersOffhandConfig config) {
+        if (client.interactionManager == null)
+            return;
+
+        if (!clickQueue.isEmpty()) {
+            clickDelayCounter++;
+            if (clickDelayCounter >= config.itemMovementDelayTicks) {
+                ClickAction click = clickQueue.poll();
+                client.interactionManager.clickSlot(click.syncId, click.slot, click.button, click.actionType,
+                        click.player);
+                clickDelayCounter = 0;
+            }
+        } else {
+            clickDelayCounter = 0;
+        }
+    }
 
     public boolean moveItemToOffhand(MinecraftClient client, PlayerEntity player, int sourceSlot) {
         return moveItemToOffhandInternal(client, player, sourceSlot, true);
@@ -28,30 +67,31 @@ public class InventoryManager {
         int containerSlot = getContainerSlotFromInventoryIndex(sourceSlot);
 
         // First, pick up the item from inventory
-        client.interactionManager.clickSlot(
+        clickQueue.offer(new ClickAction(
                 player.currentScreenHandler.syncId,
                 containerSlot,
                 0,
                 SlotActionType.PICKUP,
-                player);
+                player));
 
         // Then place it in offhand (slot 45 in player container)
-        client.interactionManager.clickSlot(
+        clickQueue.offer(new ClickAction(
                 player.currentScreenHandler.syncId,
                 45, // offhand slot in container
                 0,
                 SlotActionType.PICKUP,
-                player);
+                player));
 
         // At this point, if there was an original offhand item, it's now on the cursor
         // Place it back in the source slot (now empty)
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
+        // Since we are queuing, we assume the server state will map cleanly.
+        if (!player.currentScreenHandler.getCursorStack().isEmpty() || updateOriginalSlot) {
+            clickQueue.offer(new ClickAction(
                     player.currentScreenHandler.syncId,
                     containerSlot,
                     0,
                     SlotActionType.PICKUP,
-                    player);
+                    player));
         }
 
         if (updateOriginalSlot) {
@@ -82,43 +122,39 @@ public class InventoryManager {
             return false;
 
         // Pick up the current offhand item (should be ammo)
-        client.interactionManager.clickSlot(
+        clickQueue.offer(new ClickAction(
                 player.currentScreenHandler.syncId,
                 45, // offhand slot
                 0,
                 SlotActionType.PICKUP,
-                player);
+                player));
 
         // Convert the stored inventory index to container slot
         int containerSlot = getContainerSlotFromInventoryIndex(originalItemSlot);
 
         // Place it back in the original slot (where original item should be)
-        client.interactionManager.clickSlot(
+        clickQueue.offer(new ClickAction(
                 player.currentScreenHandler.syncId,
                 containerSlot,
                 0,
                 SlotActionType.PICKUP,
-                player);
+                player));
 
         // Now the original item should be on cursor, place it back in offhand
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
-                    player.currentScreenHandler.syncId,
-                    45, // offhand slot
-                    0,
-                    SlotActionType.PICKUP,
-                    player);
-        }
+        clickQueue.offer(new ClickAction(
+                player.currentScreenHandler.syncId,
+                45, // offhand slot
+                0,
+                SlotActionType.PICKUP,
+                player));
 
         // Clear any remaining cursor stack to be safe
-        if (!player.currentScreenHandler.getCursorStack().isEmpty()) {
-            client.interactionManager.clickSlot(
-                    player.currentScreenHandler.syncId,
-                    -999, // Outside inventory
-                    0,
-                    SlotActionType.PICKUP,
-                    player);
-        }
+        clickQueue.offer(new ClickAction(
+                player.currentScreenHandler.syncId,
+                -999, // Outside inventory
+                0,
+                SlotActionType.PICKUP,
+                player));
 
         originalItemSlot = -1; // Reset tracking
         return true;
