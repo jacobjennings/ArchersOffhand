@@ -8,6 +8,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class KeyBindingManager {
@@ -16,12 +17,14 @@ public class KeyBindingManager {
     private static KeyBinding openConfigMenu;
 
     public static void initialize() {
+        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of(ArchersOffhand.MOD_ID, "archersoffhand"));
+
         // Keybind to toggle between arrows/rockets/auto for crossbows
         toggleCrossbowAmmo = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.archersoffhand.toggle_crossbow_ammo",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_C,
-                "category.archersoffhand"
+                category
         ));
 
         // Keybind to toggle between ammo modes (REGULAR, SHUFFLE, SERIAL)
@@ -29,7 +32,7 @@ public class KeyBindingManager {
                 "key.archersoffhand.toggle_ammo_mode",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_V,
-                "category.archersoffhand"
+                category
         ));
 
         // Keybind to open config menu
@@ -37,7 +40,7 @@ public class KeyBindingManager {
                 "key.archersoffhand.open_config",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_O,
-                "category.archersoffhand"
+                category
         ));
     }
 

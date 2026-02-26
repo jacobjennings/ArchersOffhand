@@ -2,14 +2,7 @@
   "key.archersoffhand.toggle_crossbow_ammo": "Toggle Crossbow Ammo",
   "key.archersoffhand.toggle_ammo_mode": "Toggle Ammo Mode",
   "key.archersoffhand.open_config": "Open Config Menu",
-  "key.categories.archersoffhand": "Archer's Offhand",
+  "key.categories.archersoffhand.archersoffhand": "Archer's Offhand",
   "message.archersoffhand.crossbow_ammo_set": "Crossbow ammo set to: %s",
-  "message.archersoffhand.ammo_mode_set": "Ammo mode set to: %s",
-  "message.archersoffhand.scanning": "Scanning for ammo...",
-  "message.archersoffhand.moving_arrow": "Moving arrow to offhand",
-  "message.archersoffhand.moving_rocket": "Moving rocket to offhand",
-  "message.archersoffhand.no_ammo_found": "No suitable ammo found",
-  "message.archersoffhand.shield_protected": "Shield/Totem protection active",
-  "message.archersoffhand.low_hp_restore": "Low HP: Restoring offhand",
-  "message.archersoffhand.restore_skipped": "Previous offhand missing, skipping restore"
+  "message.archersoffhand.ammo_mode_set": "Ammo mode set to: %s"
 }

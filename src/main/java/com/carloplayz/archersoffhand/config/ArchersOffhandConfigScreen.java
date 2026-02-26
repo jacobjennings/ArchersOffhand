@@ -5,8 +5,6 @@ import dev.isxander.yacl3.api.controller.*;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
-import java.util.List;
-
 /**
  * YACL config screen builder. Create and open this from the mod menu or a keybind.
  */
@@ -70,21 +68,6 @@ public class ArchersOffhandConfigScreen {
                 .controller(BooleanControllerBuilder::create)
                 .build();
 
-        Option<ArchersOffhandConfig.OperationMode> operationModeOption = Option.createBuilder(ArchersOffhandConfig.OperationMode.class)
-                .name(Text.literal("Operation Mode"))
-                .description(OptionDescription.of(Text.literal("The operation mode for the mod")))
-                .binding(
-                    ArchersOffhandConfig.OperationMode.NORMAL, // default value
-                    () -> cfg.operationMode,
-                    val -> cfg.operationMode = val
-                )
-                .controller(opt -> EnumControllerBuilder.create(opt).enumClass(ArchersOffhandConfig.OperationMode.class))
-                .build();
-
-
-
-
-
         // Advanced options
         Option<Boolean> debugLoggingOption = Option.createBuilder(Boolean.class)
                 .name(Text.literal("Debug logging"))
@@ -133,7 +116,6 @@ public class ArchersOffhandConfigScreen {
                 .option(lowHealthThresholdOption)
                 .option(restoreOnLowHealthOption)
                 .option(allowReplaceShieldTotemOption)
-                .option(operationModeOption)
                 .option(crossbowAmmoTypeOption)
                 .build();
 
@@ -155,65 +137,4 @@ public class ArchersOffhandConfigScreen {
 
         return yacl.generateScreen(parent);
     }
-    
-    private static String formatRocketPreferences(List<ArchersOffhandConfig.RocketPreference> rocketPrefs) {
-        StringBuilder rockets = new StringBuilder();
-        for (ArchersOffhandConfig.RocketPreference r : rocketPrefs) {
-            if (rockets.length() > 0) rockets.append("\n");
-            rockets.append(r.flight).append("|").append(r.explosive);
-        }
-        return rockets.toString();
-    }
-    
-    private static String getArrowDisplayName(String itemId) {
-        // Handle specific tipped arrows with NBT data
-        if (itemId.startsWith("minecraft:tipped_arrow{Potion:")) {
-            // Extract potion type from NBT
-            int start = itemId.indexOf("\"");
-            int end = itemId.indexOf("\"", start + 1);
-            if (start != -1 && end != -1) {
-                String potionId = itemId.substring(start + 1, end);
-                String potionName = potionId.replace("minecraft:", "").replace("_", " ");
-                return "Tipped Arrow of " + Character.toUpperCase(potionName.charAt(0)) + potionName.substring(1);
-            }
-            return "Tipped Arrow"; // Fallback
-        }
-        
-        // Simple mapping - in a real implementation you'd want a more robust system
-        switch (itemId) {
-            case "minecraft:arrow":
-                return "Arrow";
-            case "minecraft:spectral_arrow":
-                return "Spectral Arrow";
-            case "minecraft:tipped_arrow":
-                return "Tipped Arrow";
-            default:
-                // Attempt to create a display name from the item ID
-                String name = itemId.replace("minecraft:", "").replace("_", " ");
-                return Character.toUpperCase(name.charAt(0)) + name.substring(1);
-        }
-    }
-    
-    private static String getArrowCategory(String itemId) {
-        if (itemId.contains("spectral")) {
-            return "Special";
-        } else if (itemId.contains("tipped_arrow{Potion:")) {
-            // Extract potion type to have a more specific category
-            int start = itemId.indexOf("\"");
-            int end = itemId.indexOf("\"", start + 1);
-            if (start != -1 && end != -1) {
-                String potionId = itemId.substring(start + 1, end);
-                return "Tipped (" + Character.toUpperCase(potionId.charAt(0)) + potionId.substring(1) + ")";
-            }
-            return "Tipped";
-        } else if (itemId.contains("tipped")) {
-            return "Tipped";
-        } else if (itemId.contains("arrow")) {
-            return "Basic";
-        } else {
-            return "Other";
-        }
-    }
-    
-
 }
