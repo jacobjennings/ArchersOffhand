@@ -36,7 +36,7 @@ public class TrackingState implements IOffhandState {
         // Check for weapon switch (restoration)
         if (!context.hasWeapon()) {
             ticksWithoutWeapon++;
-            if (ticksWithoutWeapon >= context.config.unequipDelayTicks) {
+            if (ticksWithoutWeapon >= context.config.getUnequipDelayTicks()) {
                 if (context.config.debugLogging) {
                     sendDebugMessage(context.client,
                             "[Weapon Switch] No longer holding bow/crossbow, restoring original items");

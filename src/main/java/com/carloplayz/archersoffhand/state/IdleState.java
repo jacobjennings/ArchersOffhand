@@ -9,7 +9,7 @@ public class IdleState implements IOffhandState {
     public IOffhandState onTick(OffhandContext context) {
         if (context.hasWeapon()) {
             ticksHoldingWeapon++;
-            if (ticksHoldingWeapon >= context.config.equipDelayTicks) {
+            if (ticksHoldingWeapon >= context.config.getEquipDelayTicks()) {
                 return new TrackingState(context);
             }
         } else {

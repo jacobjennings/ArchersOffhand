@@ -35,7 +35,7 @@ public class InventoryManager {
 
         if (!clickQueue.isEmpty()) {
             clickDelayCounter++;
-            if (clickDelayCounter >= config.itemMovementDelayTicks) {
+            if (clickDelayCounter >= config.getItemMovementDelayTicks()) {
                 ClickAction click = clickQueue.poll();
                 client.interactionManager.clickSlot(click.syncId, click.slot, click.button, click.actionType,
                         click.player);
@@ -85,14 +85,12 @@ public class InventoryManager {
         // At this point, if there was an original offhand item, it's now on the cursor
         // Place it back in the source slot (now empty)
         // Since we are queuing, we assume the server state will map cleanly.
-        if (!player.currentScreenHandler.getCursorStack().isEmpty() || updateOriginalSlot) {
-            clickQueue.offer(new ClickAction(
-                    player.currentScreenHandler.syncId,
-                    containerSlot,
-                    0,
-                    SlotActionType.PICKUP,
-                    player));
-        }
+        clickQueue.offer(new ClickAction(
+                player.currentScreenHandler.syncId,
+                containerSlot,
+                0,
+                SlotActionType.PICKUP,
+                player));
 
         if (updateOriginalSlot) {
             originalItemSlot = sourceSlot; // Store the original inventory index
@@ -144,14 +142,6 @@ public class InventoryManager {
         clickQueue.offer(new ClickAction(
                 player.currentScreenHandler.syncId,
                 45, // offhand slot
-                0,
-                SlotActionType.PICKUP,
-                player));
-
-        // Clear any remaining cursor stack to be safe
-        clickQueue.offer(new ClickAction(
-                player.currentScreenHandler.syncId,
-                -999, // Outside inventory
                 0,
                 SlotActionType.PICKUP,
                 player));

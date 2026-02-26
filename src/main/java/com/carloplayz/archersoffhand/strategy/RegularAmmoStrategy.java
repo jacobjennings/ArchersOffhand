@@ -47,7 +47,7 @@ public class RegularAmmoStrategy implements IAmmoStrategy {
     public void onTick(OffhandContext context) {
         if (context.player.getOffHandStack().isEmpty()) {
             inventoryScanCounter++;
-            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+            if (inventoryScanCounter >= context.config.getInventoryScanDelayTicks()) {
                 activate(context);
                 inventoryScanCounter = 0;
             }

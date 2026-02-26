@@ -48,7 +48,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
     public void onTick(OffhandContext context) {
         if (!isTracking) {
             inventoryScanCounter++;
-            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+            if (inventoryScanCounter >= context.config.getInventoryScanDelayTicks()) {
                 activate(context);
                 inventoryScanCounter = 0;
             }
@@ -64,7 +64,7 @@ public class SerialAmmoStrategy implements IAmmoStrategy {
         int currentCount = currentOffhand.getCount();
         if (currentCount < previousOffhandCount) {
             swapDelayCounter++;
-            if (swapDelayCounter >= context.config.swapDelayTicks) {
+            if (swapDelayCounter >= context.config.getSwapDelayTicks()) {
                 refreshList(context);
 
                 int slot = findSlot(context);

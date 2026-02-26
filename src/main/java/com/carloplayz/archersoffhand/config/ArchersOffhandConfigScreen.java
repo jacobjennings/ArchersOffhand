@@ -108,15 +108,38 @@ public class ArchersOffhandConfigScreen {
                                 .build();
 
                 // --- DELAYS ---
+                Option<ArchersOffhandConfig.DelayPreset> delayPresetOption = Option.<ArchersOffhandConfig.DelayPreset>createBuilder()
+                                .name(Text.literal("Delay Preset"))
+                                .description(OptionDescription.of(
+                                                Text.literal("Global preset for action delays"),
+                                                Text.literal("PERFORMANCE: Maximize stability\nSPEED: 0 delay\nBALANCED: Default\nADAPTIVE: Dynamic anti-cheat decoy\nCUSTOM: Use sliders below")))
+                                .binding(
+                                                ArchersOffhandConfig.DelayPreset.BALANCED,
+                                                () -> cfg.delayPreset,
+                                                val -> cfg.delayPreset = val)
+                                .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ArchersOffhandConfig.DelayPreset.class))
+                                .build();
+
                 Option<Integer> equipDelayOption = Option.<Integer>createBuilder()
                                 .name(Text.literal("Equip Delay (ticks)"))
                                 .description(OptionDescription.of(Text.literal(
                                                 "Delay before sending ammo to the offhand after holding a bow/crossbow.")))
                                 .binding(
                                                 4,
-                                                () -> cfg.equipDelayTicks,
-                                                val -> cfg.equipDelayTicks = val)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
+                                                () -> cfg.getBaseEquipDelayTicks(cfg.delayPreset),
+                                                val -> {
+                                                        if (delayPresetOption
+                                                                        .pendingValue() == ArchersOffhandConfig.DelayPreset.CUSTOM) {
+                                                                cfg.equipDelayTicks = val;
+                                                        }
+                                                })
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1)
+                                                .valueFormatter(val -> delayPresetOption
+                                                                .pendingValue() == ArchersOffhandConfig.DelayPreset.ADAPTIVE
+                                                                                ? Text.literal(val + " +/- 3")
+                                                                                : Text.literal(val.toString())))
+                                .available(cfg.delayPreset == ArchersOffhandConfig.DelayPreset.CUSTOM)
                                 .build();
 
                 Option<Integer> unequipDelayOption = Option.<Integer>createBuilder()
@@ -125,9 +148,19 @@ public class ArchersOffhandConfigScreen {
                                                 "Delay before restoring the original offhand item after unequipping a bow/crossbow.")))
                                 .binding(
                                                 4,
-                                                () -> cfg.unequipDelayTicks,
-                                                val -> cfg.unequipDelayTicks = val)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
+                                                () -> cfg.getBaseUnequipDelayTicks(cfg.delayPreset),
+                                                val -> {
+                                                        if (delayPresetOption
+                                                                        .pendingValue() == ArchersOffhandConfig.DelayPreset.CUSTOM) {
+                                                                cfg.unequipDelayTicks = val;
+                                                        }
+                                                })
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1)
+                                                .valueFormatter(val -> delayPresetOption
+                                                                .pendingValue() == ArchersOffhandConfig.DelayPreset.ADAPTIVE
+                                                                                ? Text.literal(val + " +/- 3")
+                                                                                : Text.literal(val.toString())))
+                                .available(cfg.delayPreset == ArchersOffhandConfig.DelayPreset.CUSTOM)
                                 .build();
 
                 Option<Integer> swapDelayOption = Option.<Integer>createBuilder()
@@ -136,9 +169,19 @@ public class ArchersOffhandConfigScreen {
                                                 "Delay before loading the next piece of ammo after a shot (Shuffle/Serial modes).")))
                                 .binding(
                                                 2,
-                                                () -> cfg.swapDelayTicks,
-                                                val -> cfg.swapDelayTicks = val)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
+                                                () -> cfg.getBaseSwapDelayTicks(cfg.delayPreset),
+                                                val -> {
+                                                        if (delayPresetOption
+                                                                        .pendingValue() == ArchersOffhandConfig.DelayPreset.CUSTOM) {
+                                                                cfg.swapDelayTicks = val;
+                                                        }
+                                                })
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1)
+                                                .valueFormatter(val -> delayPresetOption
+                                                                .pendingValue() == ArchersOffhandConfig.DelayPreset.ADAPTIVE
+                                                                                ? Text.literal(val + " +/- 3")
+                                                                                : Text.literal(val.toString())))
+                                .available(cfg.delayPreset == ArchersOffhandConfig.DelayPreset.CUSTOM)
                                 .build();
 
                 Option<Integer> inventoryScanDelayOption = Option.<Integer>createBuilder()
@@ -147,9 +190,19 @@ public class ArchersOffhandConfigScreen {
                                                 "Delay between full inventory scans when out of ammo, avoiding constant lag.")))
                                 .binding(
                                                 10,
-                                                () -> cfg.inventoryScanDelayTicks,
-                                                val -> cfg.inventoryScanDelayTicks = val)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1))
+                                                () -> cfg.getBaseInventoryScanDelayTicks(cfg.delayPreset),
+                                                val -> {
+                                                        if (delayPresetOption
+                                                                        .pendingValue() == ArchersOffhandConfig.DelayPreset.CUSTOM) {
+                                                                cfg.inventoryScanDelayTicks = val;
+                                                        }
+                                                })
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 40).step(1)
+                                                .valueFormatter(val -> delayPresetOption
+                                                                .pendingValue() == ArchersOffhandConfig.DelayPreset.ADAPTIVE
+                                                                                ? Text.literal(val + " +/- 3")
+                                                                                : Text.literal(val.toString())))
+                                .available(cfg.delayPreset == ArchersOffhandConfig.DelayPreset.CUSTOM)
                                 .build();
 
                 Option<Integer> itemMovementDelayOption = Option.<Integer>createBuilder()
@@ -158,13 +211,47 @@ public class ArchersOffhandConfigScreen {
                                                 "Delay between each simulated click when equipping ammo, preventing anti-cheat 'FastClick' kicks.")))
                                 .binding(
                                                 2,
-                                                () -> cfg.itemMovementDelayTicks,
-                                                val -> cfg.itemMovementDelayTicks = val)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 10).step(1))
+                                                () -> cfg.getBaseItemMovementDelayTicks(cfg.delayPreset),
+                                                val -> {
+                                                        if (delayPresetOption
+                                                                        .pendingValue() == ArchersOffhandConfig.DelayPreset.CUSTOM) {
+                                                                cfg.itemMovementDelayTicks = val;
+                                                        }
+                                                })
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(0, 10).step(1)
+                                                .valueFormatter(val -> delayPresetOption
+                                                                .pendingValue() == ArchersOffhandConfig.DelayPreset.ADAPTIVE
+                                                                                ? Text.literal(val + " +/- 3")
+                                                                                : Text.literal(val.toString())))
+                                .available(cfg.delayPreset == ArchersOffhandConfig.DelayPreset.CUSTOM)
                                 .build();
+
+                delayPresetOption.addListener((opt, newPreset) -> {
+                        boolean isCustom = (newPreset == ArchersOffhandConfig.DelayPreset.CUSTOM);
+                        equipDelayOption.setAvailable(isCustom);
+                        unequipDelayOption.setAvailable(isCustom);
+                        swapDelayOption.setAvailable(isCustom);
+                        inventoryScanDelayOption.setAvailable(isCustom);
+                        itemMovementDelayOption.setAvailable(isCustom);
+
+                        if (!isCustom) {
+                                equipDelayOption.requestSet(cfg.getBaseEquipDelayTicks(newPreset));
+                                unequipDelayOption.requestSet(cfg.getBaseUnequipDelayTicks(newPreset));
+                                swapDelayOption.requestSet(cfg.getBaseSwapDelayTicks(newPreset));
+                                inventoryScanDelayOption.requestSet(cfg.getBaseInventoryScanDelayTicks(newPreset));
+                                itemMovementDelayOption.requestSet(cfg.getBaseItemMovementDelayTicks(newPreset));
+                        } else {
+                                equipDelayOption.requestSet(cfg.equipDelayTicks);
+                                unequipDelayOption.requestSet(cfg.unequipDelayTicks);
+                                swapDelayOption.requestSet(cfg.swapDelayTicks);
+                                inventoryScanDelayOption.requestSet(cfg.inventoryScanDelayTicks);
+                                itemMovementDelayOption.requestSet(cfg.itemMovementDelayTicks);
+                        }
+                });
 
                 OptionGroup delaysGroup = OptionGroup.createBuilder()
                                 .name(Text.literal("Action Delays"))
+                                .option(delayPresetOption)
                                 .option(equipDelayOption)
                                 .option(unequipDelayOption)
                                 .option(swapDelayOption)

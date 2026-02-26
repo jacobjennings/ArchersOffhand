@@ -33,7 +33,7 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
     public void onTick(OffhandContext context) {
         if (!isTracking) {
             inventoryScanCounter++;
-            if (inventoryScanCounter >= context.config.inventoryScanDelayTicks) {
+            if (inventoryScanCounter >= context.config.getInventoryScanDelayTicks()) {
                 activate(context);
                 inventoryScanCounter = 0;
             }
@@ -49,7 +49,7 @@ public class ShuffleAmmoStrategy implements IAmmoStrategy {
         int currentCount = currentOffhand.getCount();
         if (currentCount < previousOffhandCount) {
             swapDelayCounter++;
-            if (swapDelayCounter >= context.config.swapDelayTicks) {
+            if (swapDelayCounter >= context.config.getSwapDelayTicks()) {
                 // Ammo consumed and delay passed, reshuffle
                 int slot = findSlot(context);
                 if (slot != -1) {
