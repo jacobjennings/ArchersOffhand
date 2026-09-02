@@ -1,156 +1,53 @@
 package com.carloplayz.archersoffhand.config;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * POJO-style config. Will be serialized to/from JSON by ConfigManager.
- * Keep all fields public for simple Gson serialization.
- */
-public class ArchersOffhandConfig {
+/** Persistent user settings. Public fields keep the on-disk JSON readable. */
+public final class ArchersOffhandConfig {
     public boolean enabled = true;
-    public int equipDelayTicks = 2;
-    public int unequipDelayTicks = 2;
-    public int swapDelayTicks = 2;
-    public int inventoryScanDelayTicks = 4;
-    public int itemMovementDelayTicks = 2;
+    public boolean scanHotbar = true;
+    public boolean replaceOccupiedOffhand = true;
+    public boolean restoreOnLowHealth = true;
     public double lowHealthThreshold = 6.0;
-    public boolean restoreOffhandOnLowHealth = true;
-    public boolean allowReplaceShieldTotem = true;
-
-    public static enum DelayPreset {
-        PERFORMANCE, SPEED, BALANCED, ADAPTIVE, CUSTOM
-    }
-
-    public AmmoSwitchMode ammoMode = AmmoSwitchMode.REGULAR;
-    public CrossbowAmmoType crossbowAmmoType = CrossbowAmmoType.AUTO;
-
-    public DelayPreset delayPreset = DelayPreset.BALANCED;
-
+    public int equipDelayTicks = 2;
+    public int restoreDelayTicks = 2;
+    public int clickCooldownTicks = 2;
     public boolean debugLogging = false;
-    public boolean scanHotbar = false; // when false, only scans main inventory (9-35)
 
-    private static final transient Random random = new Random();
+    /** First matching rule wins. Later entries are user-controlled fallbacks. */
+    public List<String> projectilePreferences = new ArrayList<>(List.of(
+            ProjectilePreferenceTokens.NORMAL_ARROW));
 
-    public int getBaseEquipDelayTicks(DelayPreset preset) {
-        switch (preset) {
-            case PERFORMANCE:
-                return 3;
-            case SPEED:
-                return 0;
-            case BALANCED:
-                return 2;
-            case ADAPTIVE:
-                return 2;
-            case CUSTOM:
-            default:
-                return equipDelayTicks;
+    /** Applied only after every ordered preference fails. */
+    public FallbackPolicy fallbackPolicy = FallbackPolicy.ANY_PROJECTILE;
+
+    public enum FallbackPolicy {
+        NONE,
+        ANY_ARROW,
+        ANY_FIREWORK,
+        ANY_PROJECTILE
+    }
+
+    public void validate() {
+        if (projectilePreferences == null) {
+            projectilePreferences = new ArrayList<>();
+        } else {
+            projectilePreferences = new ArrayList<>(projectilePreferences.stream()
+                    .filter(ProjectilePreferenceTokens::isValid)
+                    .distinct()
+                    .toList());
         }
-    }
-
-    public int getEquipDelayTicks() {
-        int base = getBaseEquipDelayTicks(delayPreset);
-        if (delayPreset == DelayPreset.ADAPTIVE)
-            return Math.max(0, base + random.nextInt(7) - 3);
-        return base;
-    }
-
-    public int getBaseUnequipDelayTicks(DelayPreset preset) {
-        switch (preset) {
-            case PERFORMANCE:
-                return 3;
-            case SPEED:
-                return 0;
-            case BALANCED:
-                return 2;
-            case ADAPTIVE:
-                return 2;
-            case CUSTOM:
-            default:
-                return unequipDelayTicks;
+        if (fallbackPolicy == null) {
+            fallbackPolicy = FallbackPolicy.NONE;
         }
+        lowHealthThreshold = Math.max(0.0, Math.min(20.0, lowHealthThreshold));
+        equipDelayTicks = clampTicks(equipDelayTicks);
+        restoreDelayTicks = clampTicks(restoreDelayTicks);
+        clickCooldownTicks = clampTicks(clickCooldownTicks);
     }
 
-    public int getUnequipDelayTicks() {
-        int base = getBaseUnequipDelayTicks(delayPreset);
-        if (delayPreset == DelayPreset.ADAPTIVE)
-            return Math.max(0, base + random.nextInt(7) - 3);
-        return base;
-    }
-
-    public int getBaseSwapDelayTicks(DelayPreset preset) {
-        switch (preset) {
-            case PERFORMANCE:
-                return 3;
-            case SPEED:
-                return 0;
-            case BALANCED:
-                return 2;
-            case ADAPTIVE:
-                return 2;
-            case CUSTOM:
-            default:
-                return swapDelayTicks;
-        }
-    }
-
-    public int getSwapDelayTicks() {
-        int base = getBaseSwapDelayTicks(delayPreset);
-        if (delayPreset == DelayPreset.ADAPTIVE)
-            return Math.max(0, base + random.nextInt(7) - 3);
-        return base;
-    }
-
-    public int getBaseInventoryScanDelayTicks(DelayPreset preset) {
-        switch (preset) {
-            case PERFORMANCE:
-                return 6;
-            case SPEED:
-                return 2;
-            case BALANCED:
-                return 4;
-            case ADAPTIVE:
-                return 4;
-            case CUSTOM:
-            default:
-                return inventoryScanDelayTicks;
-        }
-    }
-
-    public int getInventoryScanDelayTicks() {
-        int base = getBaseInventoryScanDelayTicks(delayPreset);
-        if (delayPreset == DelayPreset.ADAPTIVE)
-            return Math.max(0, base + random.nextInt(7) - 3);
-        return base;
-    }
-
-    public int getBaseItemMovementDelayTicks(DelayPreset preset) {
-        switch (preset) {
-            case PERFORMANCE:
-                return 3;
-            case SPEED:
-                return 0;
-            case BALANCED:
-                return 2;
-            case ADAPTIVE:
-                return 2;
-            case CUSTOM:
-            default:
-                return itemMovementDelayTicks;
-        }
-    }
-
-    public int getItemMovementDelayTicks() {
-        int base = getBaseItemMovementDelayTicks(delayPreset);
-        if (delayPreset == DelayPreset.ADAPTIVE)
-            return Math.max(0, base + random.nextInt(7) - 3);
-        return base;
-    }
-
-    public enum AmmoSwitchMode {
-        REGULAR, SHUFFLE, SERIAL
-    }
-
-    public enum CrossbowAmmoType {
-        ARROWS, ROCKETS, AUTO
+    private static int clampTicks(int value) {
+        return Math.max(0, Math.min(40, value));
     }
 }

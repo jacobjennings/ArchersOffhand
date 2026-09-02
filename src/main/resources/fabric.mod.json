@@ -1,15 +1,19 @@
 {
   "schemaVersion": 1,
   "id": "archersoffhand",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "Archer's Offhand",
-  "description": "Ethically automates offhand management for bow and crossbow users.",
+  "description": "Loads preferred crossbow projectiles into the offhand and safely restores the previous item.",
   "authors": [
     "Carloplayz"
   ],
+  "contributors": [
+    "Jacob Jennings"
+  ],
   "contact": {
-    "homepage": "https://github.com/Carloplayz/ArchersOffhand",
-    "sources": "https://github.com/Carloplayz/ArchersOffhand"
+    "homepage": "https://github.com/jacobjennings/ArchersOffhand",
+    "sources": "https://github.com/jacobjennings/ArchersOffhand",
+    "issues": "https://github.com/jacobjennings/ArchersOffhand/issues"
   },
   "license": "MIT",
   "icon": "assets/archersoffhand/textures/icon.png",
@@ -23,10 +27,11 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.17.2",
-    "minecraft": ">=1.21.8",
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
     "fabric-api": "*",
-    "yet_another_config_lib_v3": ">=3.7.1+1.21.6-fabric",
-    "modmenu": ">=15.0.0"
+    "yet_another_config_lib_v3": ">=3.9.5+26.1-fabric",
+    "modmenu": ">=18.0.0-beta.1"
   }
 }

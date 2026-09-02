@@ -13,15 +13,14 @@ public class ArchersOffhand implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("[Archer's Offhand] Initializing...");
-        // load config (ensure defaults exist)
         ConfigManager.init();
-        // initialize keybinds
         KeyBindingManager.initialize();
-        // register keybind handler
+
+        // Keep all client-side work on one end-of-tick callback. The handler owns
+        // its state machine; it does not register a second callback of its own.
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             KeyBindingManager.onClientTick(client);
+            OffhandHandler.tick(client);
         });
-        // register handler
-        OffhandHandler.register();
     }
 }

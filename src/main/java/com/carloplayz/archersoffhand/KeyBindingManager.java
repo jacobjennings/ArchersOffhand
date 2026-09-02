@@ -1,159 +1,88 @@
 package com.carloplayz.archersoffhand;
 
-import com.carloplayz.archersoffhand.config.ArchersOffhandConfig;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.carloplayz.archersoffhand.config.ArchersOffhandConfigScreen;
 import com.carloplayz.archersoffhand.config.ConfigManager;
-import com.carloplayz.archersoffhand.config.ArchersOffhandConfig.CrossbowAmmoType;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import org.lwjgl.glfw.GLFW;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
-public class KeyBindingManager {
-    private static KeyBinding toggleCrossbowAmmo;
-    private static KeyBinding toggleAmmoMode;
-    private static KeyBinding openConfigMenu;
+/** Client key mappings and their end-of-tick actions. */
+public final class KeyBindingManager {
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath(ArchersOffhand.MOD_ID, "keys"));
 
-    public static void initialize() {
-        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of(ArchersOffhand.MOD_ID, "archersoffhand"));
+    private static KeyMapping toggleEnabled;
+    private static KeyMapping cyclePrimaryPreference;
+    private static KeyMapping openConfigMenu;
 
-        // Keybind to toggle between arrows/rockets/auto for crossbows
-        toggleCrossbowAmmo = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.archersoffhand.toggle_crossbow_ammo",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_C,
-                category
-        ));
-
-        // Keybind to toggle between ammo modes (REGULAR, SHUFFLE, SERIAL)
-        toggleAmmoMode = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.archersoffhand.toggle_ammo_mode",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_V,
-                category
-        ));
-
-        // Keybind to open config menu
-        openConfigMenu = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.archersoffhand.open_config",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_O,
-                category
-        ));
+    private KeyBindingManager() {
     }
 
-    public static void onClientTick(MinecraftClient client) {
-        while (toggleCrossbowAmmo.wasPressed()) {
-            toggleCrossbowAmmoType(client);
+    public static void initialize() {
+        // The gameplay actions are intentionally unbound by default. Players can
+        // choose keys in Minecraft's Controls screen without stealing defaults.
+        toggleEnabled = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.archersoffhand.toggle_enabled",
+                InputConstants.Type.KEYSYM,
+                InputConstants.UNKNOWN.getValue(),
+                CATEGORY));
+
+        cyclePrimaryPreference = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.archersoffhand.cycle_primary_preference",
+                InputConstants.Type.KEYSYM,
+                InputConstants.UNKNOWN.getValue(),
+                CATEGORY));
+
+        // Preserve the existing convenient O shortcut for the configuration UI.
+        openConfigMenu = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.archersoffhand.open_config",
+                InputConstants.Type.KEYSYM,
+                InputConstants.KEY_O,
+                CATEGORY));
+    }
+
+    public static void onClientTick(Minecraft client) {
+        while (toggleEnabled.consumeClick()) {
+            toggleEnabled(client);
         }
 
-        while (toggleAmmoMode.wasPressed()) {
-            toggleAmmoMode(client);
+        while (cyclePrimaryPreference.consumeClick()) {
+            // ConfigManager owns the configured preference order and its save /
+            // feedback behavior. Keep this key binding as a thin delegate.
+            ConfigManager.cyclePrimaryPreference(client);
         }
 
-        while (openConfigMenu.wasPressed()) {
+        while (openConfigMenu.consumeClick()) {
             openConfigMenu(client);
         }
     }
 
-    private static void toggleCrossbowAmmoType(MinecraftClient client) {
-        if (client.player == null) return;
-
-        ArchersOffhandConfig config = ConfigManager.CONFIG;
-        if (config == null) return;
-
-        // Cycle through ammo types: ARROWS -> ROCKETS -> AUTO -> ARROWS...
-        CrossbowAmmoType current = config.crossbowAmmoType;
-        CrossbowAmmoType next;
-        
-        switch (current) {
-            case ARROWS:
-                next = CrossbowAmmoType.ROCKETS;
-                break;
-            case ROCKETS:
-                next = CrossbowAmmoType.AUTO;
-                break;
-            case AUTO:
-            default:
-                next = CrossbowAmmoType.ARROWS;
-                break;
+    private static void toggleEnabled(Minecraft client) {
+        if (ConfigManager.CONFIG == null) {
+            return;
         }
 
-        config.crossbowAmmoType = next;
+        ConfigManager.CONFIG.enabled = !ConfigManager.CONFIG.enabled;
         ConfigManager.save();
 
-        // Send colorful action bar message to player
-        String ammoTypeName = getAmmoTypeName(next);
-        Text message = Text.translatable("message.archersoffhand.crossbow_ammo_set", ammoTypeName).formatted(net.minecraft.util.Formatting.AQUA);
-        client.player.sendMessage(message, true);
-    }
-
-    private static void toggleAmmoMode(MinecraftClient client) {
-        if (client.player == null) return;
-
-        ArchersOffhandConfig config = ConfigManager.CONFIG;
-        if (config == null) return;
-
-        // Cycle through ammo modes: REGULAR -> SHUFFLE -> SERIAL -> REGULAR...
-        ArchersOffhandConfig.AmmoSwitchMode current = config.ammoMode;
-        ArchersOffhandConfig.AmmoSwitchMode next;
-        
-        switch (current) {
-            case REGULAR:
-                next = ArchersOffhandConfig.AmmoSwitchMode.SHUFFLE;
-                break;
-            case SHUFFLE:
-                next = ArchersOffhandConfig.AmmoSwitchMode.SERIAL;
-                break;
-            case SERIAL:
-            default:
-                next = ArchersOffhandConfig.AmmoSwitchMode.REGULAR;
-                break;
-        }
-
-        config.ammoMode = next;
-        ConfigManager.save();
-
-        // Send colorful action bar message to player
-        String modeName = getAmmoModeName(next);
-        Text message = Text.translatable("message.archersoffhand.ammo_mode_set", modeName).formatted(net.minecraft.util.Formatting.GOLD);
-        client.player.sendMessage(message, true);
-    }
-
-    private static void openConfigMenu(MinecraftClient client) {
-        if (client.player == null || client.currentScreen != null) return;
-
-        // Open the config menu
-        client.execute(() -> {
-            client.setScreen(com.carloplayz.archersoffhand.config.ArchersOffhandConfigScreen.create(client.currentScreen));
-        });
-    }
-
-    private static String getAmmoTypeName(CrossbowAmmoType type) {
-        switch (type) {
-            case ARROWS:
-                return "Arrows";
-            case ROCKETS:
-                return "Rockets";
-            case AUTO:
-                return "Auto (Rockets→Arrows)";
-            default:
-                return type.toString();
+        if (client.player != null) {
+            String messageKey = ConfigManager.CONFIG.enabled
+                    ? "message.archersoffhand.enabled"
+                    : "message.archersoffhand.disabled";
+            client.player.sendOverlayMessage(Component.translatable(messageKey));
         }
     }
 
-    private static String getAmmoModeName(ArchersOffhandConfig.AmmoSwitchMode mode) {
-        switch (mode) {
-            case REGULAR:
-                return "Regular";
-            case SHUFFLE:
-                return "Shuffle";
-            case SERIAL:
-                return "Serial";
-            default:
-                return mode.toString();
+    private static void openConfigMenu(Minecraft client) {
+        if (client.screen != null) {
+            return;
         }
+
+        Screen parent = client.screen;
+        client.setScreen(ArchersOffhandConfigScreen.create(parent));
     }
 }

@@ -1,11 +1,13 @@
 plugins {
-    id 'fabric-loom' version '1.15.3'
+    // Minecraft 26.1+ ships with canonical Mojang names. The non-remapping
+    // Loom plugin compiles directly against those names.
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
-group = 'com.carloplayz'
-version = '1.0.0'
+group = project.maven_group
+version = project.mod_version
 base {
-    archivesName.set('archersoffhand')
+    archivesName.set(project.archives_base_name)
 }
 
 repositories {
@@ -19,24 +21,40 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.21.11"
-    mappings 'net.fabricmc:yarn:1.21.11+build.4'
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
 
-    modImplementation "net.fabricmc:fabric-loader:0.18.4"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.141.2+1.21.11"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    modImplementation "com.terraformersmc:modmenu:17.0.0-beta.2"
-    modImplementation "dev.isxander:yet-another-config-lib:3.8.2+1.21.11-fabric"
+    implementation "com.terraformersmc:modmenu:${project.mod_menu_version}"
+    implementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.12.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
-loom {
-    // Removed accesswidener since it's not being used
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+def targetJavaVersion = 25
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = targetJavaVersion
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 java {
     withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
 }
 
 loom {
@@ -46,7 +64,6 @@ loom {
             configName = "Minecraft Client"
             ideConfigGenerated = true
             runDir = "run"
-            programArgs "--username", "CarloPlayz"
         }
     }
 }

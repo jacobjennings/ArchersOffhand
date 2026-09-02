@@ -6,55 +6,76 @@
   </a>
 </p>
 
-A powerful, highly configurable, and ethically-minded Minecraft Fabric mod that automates offhand inventory management for bow and crossbow users. Never scramble for arrows in the middle of a fight again.
+This is a client-only Minecraft **26.1.2** fork of [Archer's Offhand](https://github.com/Carloplayz/ArchersOffhand), originally created by Carloplayz. It loads a preferred crossbow projectile from the player inventory and restores the previous offhand item when it is safe to do so.
 
-## ✨ Features
+## Behavior
 
-- **Smart Ammo Management**: Automatically fetches and equips arrows and fireworks to your offhand the moment you hold a bow or crossbow.
-- **Dynamic Restoration**: Instantly restores your previous offhand item (like a Shield or Totem of Undying) as soon as you put your bow away.
-- **Multiple Ammo Selection Modes**:
-  - `REGULAR`: Grabs the first available stack of arrows or rockets.
-  - `SHUFFLE`: Picks a random stack of special arrows or rockets to keep your enemies guessing.
-  - `SERIAL`: Cycles methodically through your ammo types, one by one.
-- **Advanced Delay Presets**: Choose between 5 preset delay profiles designed to balance performance, feel, and anti-cheat compliance:
-  - `PERFORMANCE`: Higher ticks to minimize server/client impact.
-  - `SPEED`: Zero delay for maximum responsiveness.
-  - `BALANCED`: The default, fine-tuned vanilla experience.
-  - `ADAPTIVE`: Dynamically randomizes timings acting as a decoy for strict anti-cheat plugins.
-  - `CUSTOM`: Complete control over individual delay values via sliders.
-- **Failsafe & Protection System**: Prevents replacing vital offhand items (Totems/Shields) without permission, and can automatically revert to a Totem if your health drops below a heavily configurable threshold.
+- Selection starts only while a **crossbow is held in the main hand**. Other held items do not activate the manager.
+- The crossbow's supported projectiles are arrows and firework rockets. Inventory scanning can include or exclude the hotbar.
+- Preferences are an ordered list: the first matching rule wins, and inventory order breaks ties.
+- The fallback policy is evaluated only after every ordered preference fails. It can be:
+  - `NONE` — leave the offhand unchanged.
+  - `ANY_ARROW` — accept any arrow tagged for crossbows.
+  - `ANY_FIREWORK` — accept any firework rocket.
+  - `ANY_PROJECTILE` — accept any compatible arrow or firework rocket.
 
-## ⚙️ How It Works (Under the Hood)
+The preference catalog includes generic and specific rules:
 
-Archer's Offhand is powered by a robust **State Machine** architecture ensuring reliable, lag-free performance:
+- Any compatible projectile, any arrow, any tipped arrow, any firework rocket, or a specific item ID.
+- Potion rules match the potion contents of tipped arrows.
+- Firework rules can match flight duration, utility rockets with no explosions, explosive rockets, or rockets containing a particular explosion shape.
+- An item observed in the inventory can be saved as an exact variant. Exact matching preserves the complete item components, including potion contents and every firework component: flight duration, all explosions, shapes, colors, fade colors, trail, and twinkle.
 
-- **Idle State**: Monitors your hands waiting for a ranged weapon.
-- **Tracking State**: Actively manages your ammo supply while a weapon is equipped, adhering to your chosen `AmmoStrategy` (Regular, Shuffle, Serial) and scanning delays.
-- **Cooldowns & Queues**: An advanced `InventoryManager` handles the actual item swapping. It utilizes a sophisticated click-queue system to deliberately space out inventory simulated clicks, defeating rapid-fire anti-cheat kicks while maintaining a smooth user experience.
+## Safe inventory handling
 
-## 📥 Installation
+The mod uses one vanilla inventory `SWAP` operation between a player-inventory slot and the offhand. It does not emulate a pickup/drag sequence or operate through a chest, crafting table, or other open container.
 
-1. Install [Fabric Loader](https://fabricmc.net/use/installer/) (0.18.4+)
-2. Install [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api) (0.141.2+ for 1.21.11)
-3. Install [Yet Another Config Lib (YACL)](https://modrinth.com/mod/yet-another-config-lib)
-4. _(Optional but recommended)_ Install [ModMenu](https://modrinth.com/mod/modmenu) for an easy in-game configuration screen.
-5. Drop the Archer's Offhand `.jar` into your Minecraft `mods` folder.
+Before a swap, the player inventory menu must be active, no screen may be open, and the carried cursor stack must be empty. The expected source and offhand stacks are observed before the operation, and the local result must be the exact exchange before the mod claims the projectile. If those conditions are not met, the attempt is deferred or abandoned safely.
 
-## 🔧 Configuration
+Restoration is conservative as well:
 
-Archer's Offhand features a rich, structured configuration screen powered by YACL. Access it via ModMenu to tweak:
+- The original offhand stack is retained exactly, including its count and components.
+- Restoration occurs after unequipping the crossbow, disabling the mod, or crossing the configured low-health threshold (when enabled).
+- If the player replaces the managed projectile with a different nonempty offhand stack, the mod leaves that stack alone and does not overwrite it. The original item remains in the inventory when it can be identified safely.
+- The original stack must still be found as an exact match. If it moved, the inventory is searched before restoration; if no safe exact match exists, restoration is blocked rather than guessing.
+- Occupied-offhand replacement and low-health restoration are independently configurable.
 
-- Master toggles and behavior types.
-- Specific Arrow/Rocket prioritization.
-- Failsafes and Low-Health threshold sliders.
-- Action Delays (Equipping, Unequipping, Swapping, Scanning, and Movement).
+## Configuration
 
-## 🐛 Support & Contributions
+The configuration screen is built with [Yet Another Config Lib (YACL)](https://modrinth.com/mod/yet-another-config-lib) and is available from [Mod Menu](https://modrinth.com/mod/modmenu), or with the default `O` key. It includes the ordered projectile list, fallback policy, inventory-scan scope, occupied-offhand protection, low-health threshold, equip/restore/click timing, and optional debug logging.
 
-Encounter an issue or have a suggestion?
+Keybindings are registered in Minecraft's Controls menu:
 
-- Report bugs or request features on the [GitHub Issues](https://github.com/Carloplayz/ArchersOffhand/issues) page.
-- Contributions are always welcome! Feel free to fork, make your changes, and submit a PR.
+- `O` opens the configuration screen.
+- Toggle and primary-preference-cycle actions are unbound by default and can be assigned by the player.
+
+## Installation
+
+This fork targets Minecraft **26.1.2** and requires:
+
+1. Java **25**
+2. [Fabric Loader 0.19.3 or newer](https://fabricmc.net/use/installer/)
+3. [Fabric API 0.153.0+26.1.2](https://modrinth.com/mod/fabric-api)
+4. [YACL 3.9.5+26.1-fabric](https://modrinth.com/mod/yet-another-config-lib)
+5. [Mod Menu 18.0.0-beta.1 or newer](https://modrinth.com/mod/modmenu)
+
+Put the fork's `.jar` in the client `mods` directory. The server does not need this client-only mod.
+
+## Development
+
+Use a Java 25 toolchain and run:
+
+```text
+./gradlew build
+```
+
+The build uses the canonical Mojang names supplied by Minecraft 26.1.2.
+
+## Support and contributions
+
+For this fork's source, bug reports, and pull requests, use [jacobjennings/ArchersOffhand](https://github.com/jacobjennings/ArchersOffhand) and its [issue tracker](https://github.com/jacobjennings/ArchersOffhand/issues).
+
+Please credit the upstream [Carloplayz/ArchersOffhand](https://github.com/Carloplayz/ArchersOffhand) project when reusing its work.
 
 ---
 
