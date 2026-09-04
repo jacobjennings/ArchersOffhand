@@ -28,8 +28,13 @@ class ProjectilePreferenceControllerTest {
         labels.put(ProjectilePreferenceTokens.ANY_FIREWORK, Component.literal("Any firework rocket"));
         ProjectilePreferenceController controller = new ProjectilePreferenceController(option, labels);
 
-        assertEquals(3, controller.matchingValues("Normal Arrow").size());
+        List<String> initialChoices = controller.matchingValues("Normal Arrow");
+        assertEquals(3, initialChoices.size());
+        assertEquals("Normal Arrow", initialChoices.getFirst());
         assertEquals(List.of("Spectral Arrow"), controller.matchingValues("spectral"));
         assertTrue(controller.matchingValues("firework").contains("Any firework rocket"));
+
+        controller.setFromString("Spectral Arrow");
+        assertEquals(ProjectilePreferenceTokens.SPECTRAL_ARROW, option.pendingValue());
     }
 }

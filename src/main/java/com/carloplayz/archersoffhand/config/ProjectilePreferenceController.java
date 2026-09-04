@@ -42,6 +42,19 @@ final class ProjectilePreferenceController extends DropdownStringController {
             public List<String> computeMatchingValues() {
                 return ProjectilePreferenceController.this.matchingValues(inputField);
             }
+
+            @Override
+            public void ensureValidValue() {
+                // YACL normally ignores a clicked dropdown row when the search
+                // field still contains another already-valid value. Copy the
+                // highlighted row into the field before its normal commit path.
+                if (dropdownWidget != null && matchingValues != null && !matchingValues.isEmpty()) {
+                    int selected = Math.max(0, Math.min(
+                            dropdownWidget.selectedIndex(), matchingValues.size() - 1));
+                    inputField = matchingValues.get(selected);
+                }
+                super.ensureValidValue();
+            }
         };
     }
 
@@ -57,10 +70,12 @@ final class ProjectilePreferenceController extends DropdownStringController {
         // untouched value as an empty query so opening the dropdown shows the
         // complete catalog instead of filtering it to the current choice.
         String query = input.equals(getString()) ? "" : input.toLowerCase(Locale.ROOT);
+        String current = getString();
         return getAllowedValues(input).stream()
                 .filter(value -> value.toLowerCase(Locale.ROOT).contains(query))
                 .sorted(Comparator
-                        .comparing((String value) -> !value.toLowerCase(Locale.ROOT).startsWith(query))
+                        .comparing((String value) -> !value.equals(current))
+                        .thenComparing(value -> !value.toLowerCase(Locale.ROOT).startsWith(query))
                         .thenComparing(String::compareToIgnoreCase))
                 .toList();
     }
