@@ -1,6 +1,7 @@
 package com.carloplayz.archersoffhand.config;
 
 import dev.isxander.yacl3.api.ConfigCategory;
+import dev.isxander.yacl3.api.LabelOption;
 import dev.isxander.yacl3.api.ListOption;
 import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.api.OptionDescription;
@@ -191,6 +192,8 @@ public final class ArchersOffhandConfigScreen {
                 .build();
         ConfigCategory projectileCategory = ConfigCategory.createBuilder()
                 .name(Component.literal("Projectile selection"))
+                .option(LabelOption.create(Component.literal(
+                        "Click a preference value to open the full searchable catalog. Use + to add another priority.")))
                 // ListOption must be a direct category group so YACL can render
                 // its reorder, add, and remove controls.
                 .group(projectilePreferencesOption)

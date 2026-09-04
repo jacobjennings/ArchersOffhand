@@ -1,10 +1,16 @@
 package com.carloplayz.archersoffhand.config;
 
 import dev.isxander.yacl3.api.Option;
+import dev.isxander.yacl3.api.utils.Dimension;
+import dev.isxander.yacl3.gui.AbstractWidget;
+import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.dropdown.DropdownStringController;
+import dev.isxander.yacl3.gui.controllers.dropdown.DropdownStringControllerElement;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import net.minecraft.network.chat.Component;
 
@@ -30,10 +36,33 @@ final class ProjectilePreferenceController extends DropdownStringController {
     }
 
     @Override
+    public AbstractWidget provideWidget(YACLScreen screen, Dimension<Integer> dimension) {
+        return new DropdownStringControllerElement(this, screen, dimension) {
+            @Override
+            public List<String> computeMatchingValues() {
+                return ProjectilePreferenceController.this.matchingValues(inputField);
+            }
+        };
+    }
+
+    @Override
     public void setFromString(String value) {
         String selectedLabel = getValidValue(value);
         String currentToken = option().pendingValue();
         option().requestSet(labelToToken.getOrDefault(selectedLabel, currentToken));
+    }
+
+    List<String> matchingValues(String input) {
+        // YACL seeds the search box with the current display value. Treat that
+        // untouched value as an empty query so opening the dropdown shows the
+        // complete catalog instead of filtering it to the current choice.
+        String query = input.equals(getString()) ? "" : input.toLowerCase(Locale.ROOT);
+        return getAllowedValues(input).stream()
+                .filter(value -> value.toLowerCase(Locale.ROOT).contains(query))
+                .sorted(Comparator
+                        .comparing((String value) -> !value.toLowerCase(Locale.ROOT).startsWith(query))
+                        .thenComparing(String::compareToIgnoreCase))
+                .toList();
     }
 
     private static Choices choices(Map<String, Component> entries) {
