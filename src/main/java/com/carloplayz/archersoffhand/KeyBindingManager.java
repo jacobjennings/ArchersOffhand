@@ -27,20 +27,17 @@ public final class KeyBindingManager {
         // choose keys in Minecraft's Controls screen without stealing defaults.
         toggleEnabled = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.archersoffhand.toggle_enabled",
-                InputConstants.Type.KEYSYM,
                 InputConstants.UNKNOWN.getValue(),
                 CATEGORY));
 
         cyclePrimaryPreference = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.archersoffhand.cycle_primary_preference",
-                InputConstants.Type.KEYSYM,
                 InputConstants.UNKNOWN.getValue(),
                 CATEGORY));
 
         // Preserve the existing convenient O shortcut for the configuration UI.
         openConfigMenu = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.archersoffhand.open_config",
-                InputConstants.Type.KEYSYM,
                 InputConstants.KEY_O,
                 CATEGORY));
     }
@@ -78,11 +75,11 @@ public final class KeyBindingManager {
     }
 
     private static void openConfigMenu(Minecraft client) {
-        if (client.screen != null) {
+        if (client.gui.screen() != null) {
             return;
         }
 
-        Screen parent = client.screen;
-        client.setScreen(ArchersOffhandConfigScreen.create(parent));
+        Screen parent = client.gui.screen();
+        client.gui.setScreen(ArchersOffhandConfigScreen.create(parent));
     }
 }
