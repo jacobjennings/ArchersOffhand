@@ -27,6 +27,19 @@ Client only. It does not run on `stlmc`.
 - **Run only the checks near your change.** The full build gate belongs to the
   merge lane, except where your brief names it.
 - **Never launch a graphical application.**
+- **You run directly on the owner's machine, with no sandbox.** You have his
+  home folder, keys, git, the `gh` CLI and the network. Three things are
+  forbidden because workers have caused damage with them before:
+  - **Never kill, stop or signal a process you did not start.** No `kill`,
+    `pkill`, `killall`, `tmux kill-*`, `systemctl stop` or restarts of other
+    sessions, servers or workers. If something is in your way, report it.
+  - **Never force-push or rewrite pushed history.** No `push --force`,
+    `--force-with-lease`, `+refspec`, deleting remote branches you did not
+    create, or rebasing or amending commits that are already pushed. Never
+    push to the main branch unless your brief makes you the merge run.
+  - **Never run anything on an NVIDIA GPU.** The RTX 5090 (jjpc) and RTX 3090
+    (bb) serve inference only. Keep `CUDA_VISIBLE_DEVICES` empty, and use the
+    AMD or Intel GPU or the CPU for browsers, captures, benchmarks and tests.
 - **Keep large files out of the repository.** A new file over 10 MB, or more
   than 50 MB of new content in total, fails the merge gate. Never commit built
   jars, `build/`, `dist/`, `node_modules/` or a Gradle cache.
@@ -42,7 +55,7 @@ Client only. It does not run on `stlmc`.
 
 Run these from your worktree.
 
-Gradle needs a writable home. If `~/.gradle` is not writable in your sandbox,
+Gradle needs a writable home. If `~/.gradle` is not writable,
 run `export GRADLE_USER_HOME="$TMPDIR/gradle-home"` first. Never commit a Gradle cache or
 a `build/` folder.
 
@@ -77,7 +90,8 @@ a `build/` folder.
   one unmet hard dependency stops the whole server. Prefer a `~` or `>=` predicate that
   covers the target version, and say which you chose.
 - **This is a fork.** Never push to or open anything on the upstream repository.
-- **Never contact a real server.** Do not reach `stlmc.lan` or any other lab host. Never
+- **Never contact a real server.** Your SSH keys can reach them, and only this rule
+  stops you. Do not reach `stlmc.lan`, `ss.lan` or any other lab host. Never
   start a Minecraft server or client unless your brief says so.
 - **Never write a secret** or commit a token.
 
