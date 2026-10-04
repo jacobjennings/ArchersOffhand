@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 /** Sends one vanilla SWAP click; no cursor-held intermediate state is created. */
 public final class InventoryManager {
     public boolean swapInventorySlotWithOffhand(Minecraft minecraft, LocalPlayer player, int inventorySlot) {
-        if (minecraft.gameMode == null || minecraft.screen != null
+        if (minecraft.gameMode == null || minecraft.gui.screen() != null
                 || inventorySlot < 0 || inventorySlot >= Inventory.INVENTORY_SIZE) {
             return false;
         }

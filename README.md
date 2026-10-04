@@ -6,7 +6,7 @@
   </a>
 </p>
 
-This is a client-only Minecraft **26.1.2** fork of [Archer's Offhand](https://github.com/Carloplayz/ArchersOffhand), originally created by Carloplayz. It loads a preferred crossbow projectile from the player inventory and restores the previous offhand item when it is safe to do so.
+This is a client-only Minecraft **26.3** fork of [Archer's Offhand](https://github.com/Carloplayz/ArchersOffhand), originally created by Carloplayz. It loads a preferred crossbow projectile from the player inventory and restores the previous offhand item when it is safe to do so.
 
 ## Behavior
 
@@ -51,13 +51,13 @@ Keybindings are registered in Minecraft's Controls menu:
 
 ## Installation
 
-This fork targets Minecraft **26.1.2** and requires:
+This fork targets Minecraft **26.3** and requires:
 
 1. Java **25**
-2. [Fabric Loader 0.19.3 or newer](https://fabricmc.net/use/installer/)
-3. [Fabric API 0.153.0+26.1.2](https://modrinth.com/mod/fabric-api)
-4. [YACL 3.9.5+26.1-fabric](https://modrinth.com/mod/yet-another-config-lib)
-5. [Mod Menu 18.0.0-beta.1 or newer](https://modrinth.com/mod/modmenu)
+2. [Fabric Loader 0.19.5 or newer](https://fabricmc.net/use/installer/)
+3. [Fabric API 0.161.0+26.3](https://modrinth.com/mod/fabric-api)
+4. [YACL 3.9.7+26.3-fabric](https://modrinth.com/mod/yet-another-config-lib)
+5. [Mod Menu 21.0.0 or newer](https://modrinth.com/mod/modmenu)
 
 Put the fork's `.jar` in the client `mods` directory. The server does not need this client-only mod.
 
@@ -69,7 +69,7 @@ Use a Java 25 toolchain and run:
 ./gradlew build
 ```
 
-The build uses the canonical Mojang names supplied by Minecraft 26.1.2.
+The build uses the canonical Mojang names supplied by Minecraft 26.3.
 
 ## Support and contributions
 

@@ -59,7 +59,7 @@ public final class OffhandHandler {
         }
 
         restoreTicks = 0;
-        if (minecraft.screen != null) {
+        if (minecraft.gui.screen() != null) {
             return;
         }
         if (session != null) {
