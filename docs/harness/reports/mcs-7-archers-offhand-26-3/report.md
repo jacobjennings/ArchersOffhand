@@ -1,6 +1,6 @@
 # MCS-7: client build for Minecraft 26.3
 
-Branch: `codex/mcs-7-archers-offhand-26-3`, head `07efa6b` at report time.
+Branch: `codex/mcs-7-archers-offhand-26-3`, code head `07efa6b`.
 
 Card: http://huly.lan/workbench/hulyaccessevaluation/tracker/MCS-7
 
