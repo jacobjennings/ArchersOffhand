@@ -30,7 +30,7 @@ against `origin/feat/mc-26.1.2-rewrite` and the worker's report. Then write a ve
 
 ## Checks you run
 
-Gradle needs a writable home. If `~/.gradle` is not writable in your sandbox,
+Gradle needs a writable home. If `~/.gradle` is not writable,
 run `export GRADLE_USER_HOME="$TMPDIR/gradle-home"` first. Never commit a Gradle cache or
 a `build/` folder.
 
