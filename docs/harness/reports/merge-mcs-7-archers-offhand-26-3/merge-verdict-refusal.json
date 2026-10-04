@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "parent_run_id": "review-mcs-7-archers-offhand-26-3-0030c244b9b9",
+  "commit": "6cb5173ee9fc4a18436e2f022ef36d9ec7fcffe6",
+  "report_path": "docs/reports/review-mcs-7-archers-offhand-26-3/report.md",
+  "verdict": "<missing or ambiguous verdict>",
+  "detail": "report docs/reports/review-mcs-7-archers-offhand-26-3/report.md, verdict '<missing or ambiguous verdict>': no plain accept in the committed review"
+}

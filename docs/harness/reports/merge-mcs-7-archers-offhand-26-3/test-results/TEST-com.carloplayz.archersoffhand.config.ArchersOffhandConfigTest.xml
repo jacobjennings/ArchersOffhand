@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.carloplayz.archersoffhand.config.ArchersOffhandConfigTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-04T06:07:45.713Z" hostname="cachyos-raid" time="0.019">
+  <properties/>
+  <testcase name="validationRemovesNullMalformedAndDuplicatePreferencesInOrder()" classname="com.carloplayz.archersoffhand.config.ArchersOffhandConfigTest" time="0.011"/>
+  <testcase name="validationIsIdempotent()" classname="com.carloplayz.archersoffhand.config.ArchersOffhandConfigTest" time="0.0"/>
+  <testcase name="numericSettingsAreClampedToSafeRanges()" classname="com.carloplayz.archersoffhand.config.ArchersOffhandConfigTest" time="0.0"/>
+  <testcase name="nullPreferenceListIsReplacedAndNullFallbackDisablesImplicitSelection()" classname="com.carloplayz.archersoffhand.config.ArchersOffhandConfigTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

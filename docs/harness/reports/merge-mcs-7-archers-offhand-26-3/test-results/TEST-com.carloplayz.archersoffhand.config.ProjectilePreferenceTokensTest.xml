@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.carloplayz.archersoffhand.config.ProjectilePreferenceTokensTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-04T06:07:45.790Z" hostname="cachyos-raid" time="0.003">
+  <properties/>
+  <testcase name="factoriesUseStablePrefixesAndPayloads()" classname="com.carloplayz.archersoffhand.config.ProjectilePreferenceTokensTest" time="0.0"/>
+  <testcase name="exactStackEncodingIsDeterministicAndUtf8Safe()" classname="com.carloplayz.archersoffhand.config.ProjectilePreferenceTokensTest" time="0.0"/>
+  <testcase name="decoderRejectsNullAndMalformedTokens()" classname="com.carloplayz.archersoffhand.config.ProjectilePreferenceTokensTest" time="0.001"/>
+  <testcase name="validatesKnownTokenShapes()" classname="com.carloplayz.archersoffhand.config.ProjectilePreferenceTokensTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
